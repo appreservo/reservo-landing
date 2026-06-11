@@ -75,6 +75,7 @@ function renderLayout(pageTitle, data) {
     <div class="topbar-actions">
       <a href="sito.html" target="_blank" class="btn btn-outline btn-sm">${ICONS.external} Anteprima sito</a>
       <div class="badge badge-navy">${data && data.profile ? data.profile.business_name : ''}</div>
+      <button class="btn btn-outline btn-sm" id="logoutBtn">Esci</button>
     </div>`;
 
   document.getElementById('sidebar').innerHTML = sidebarHtml;
@@ -83,6 +84,8 @@ function renderLayout(pageTitle, data) {
   document.getElementById('menuToggle').addEventListener('click', () => {
     document.getElementById('sidebar').classList.toggle('open');
   });
+
+  document.getElementById('logoutBtn').addEventListener('click', logout);
 
   fillIcons();
 }
