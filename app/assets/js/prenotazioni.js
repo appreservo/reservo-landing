@@ -1,5 +1,5 @@
-(function () {
-  let data = loadData();
+(async function () {
+  let data = await loadData();
   renderLayout('Prenotazioni', data);
 
   const now = new Date();

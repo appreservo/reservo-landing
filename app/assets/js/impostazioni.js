@@ -1,5 +1,5 @@
-(function () {
-  let data = loadData();
+(async function () {
+  let data = await loadData();
   renderLayout('Impostazioni', data);
 
   // ---------- tabs ----------
@@ -183,15 +183,15 @@
   });
 
   // ---------- dati ----------
-  document.getElementById('resetDemoBtn').addEventListener('click', () => {
+  document.getElementById('resetDemoBtn').addEventListener('click', async () => {
     if (!confirm('Ripristinare i dati di esempio originali? Tutte le modifiche andranno perse.')) return;
-    resetDemoData();
+    await resetDemoData();
     showToast('Dati di esempio ripristinati', 'success');
     setTimeout(() => location.reload(), 600);
   });
-  document.getElementById('clearAllBtn').addEventListener('click', () => {
+  document.getElementById('clearAllBtn').addEventListener('click', async () => {
     if (!confirm('Cancellare TUTTI i dati (menu, prenotazioni, eventi)? Questa azione non può essere annullata.')) return;
-    clearAllData();
+    await clearAllData();
     showToast('Dati cancellati');
     setTimeout(() => location.reload(), 600);
   });

@@ -1,5 +1,5 @@
-(function () {
-  const data = loadData();
+(async function () {
+  const data = await loadData();
   renderLayout('Menu / Listino', data);
 
   let photoData = null; // base64 of currently selected photo in modal

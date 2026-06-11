@@ -145,38 +145,51 @@ function defaultData() {
   };
 }
 
-function loadData() {
-  let raw = localStorage.getItem(DB_KEY);
-  if (!raw) {
-    const data = defaultData();
-    localStorage.setItem(DB_KEY, JSON.stringify(data));
-    return data;
+let _dataCache = null;
+
+function waitForAuthReady() {
+  if (window.reservoAuth && window.reservoAuth.currentUser) return Promise.resolve();
+  return new Promise(resolve => {
+    window.addEventListener('reservo-auth-ready', () => resolve(), { once: true });
+  });
+}
+
+async function loadData() {
+  if (_dataCache) return _dataCache;
+  await waitForAuthReady();
+  const uid = window.reservoAuth.auth.currentUser.uid;
+  const remote = await window.reservoAuth.getBusinessData(uid);
+  if (remote) {
+    _dataCache = remote;
+  } else {
+    _dataCache = defaultData();
+    await window.reservoAuth.saveBusinessData(uid, _dataCache);
   }
-  try {
-    return JSON.parse(raw);
-  } catch (e) {
-    const data = defaultData();
-    localStorage.setItem(DB_KEY, JSON.stringify(data));
-    return data;
-  }
+  return _dataCache;
 }
 
 function saveData(data) {
-  localStorage.setItem(DB_KEY, JSON.stringify(data));
+  _dataCache = data;
+  const uid = window.reservoAuth && window.reservoAuth.auth.currentUser && window.reservoAuth.auth.currentUser.uid;
+  if (uid) window.reservoAuth.saveBusinessData(uid, data).catch(() => {});
 }
 
-function resetDemoData() {
-  localStorage.removeItem(DB_KEY);
-  return loadData();
+async function resetDemoData() {
+  const uid = window.reservoAuth.auth.currentUser.uid;
+  _dataCache = defaultData();
+  await window.reservoAuth.saveBusinessData(uid, _dataCache);
+  return _dataCache;
 }
 
-function clearAllData() {
+async function clearAllData() {
+  const uid = window.reservoAuth.auth.currentUser.uid;
   const data = defaultData();
   data.menu = [];
   data.bookings = [];
   data.events = [];
   data.closures = [];
-  localStorage.setItem(DB_KEY, JSON.stringify(data));
+  _dataCache = data;
+  await window.reservoAuth.saveBusinessData(uid, data);
   return data;
 }
 

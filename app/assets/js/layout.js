@@ -48,7 +48,10 @@ function renderLayout(pageTitle, data) {
   let sidebarHtml = `
     <a href="index.html" class="sidebar-brand">
       <img src="assets/img/logo.png" alt="Reservo">
-      <span>Reservo</span>
+      <span class="sidebar-brand-text">
+        <span class="sidebar-brand-name">Reservo</span>
+        <span class="js-user-name"></span>
+      </span>
     </a>`;
 
   NAV.forEach(group => {
@@ -70,6 +73,13 @@ function renderLayout(pageTitle, data) {
   const topbarHtml = `
     <div class="flex items-center gap-3">
       <button class="menu-btn" id="menuToggle">${ICONS.menuburger}</button>
+      <div class="topbar-brand">
+        <img src="assets/img/logo.png" alt="Reservo">
+        <span class="topbar-brand-text">
+          <span class="topbar-brand-name">Reservo</span>
+          <span class="js-user-name"></span>
+        </span>
+      </div>
       <h1>${pageTitle}</h1>
     </div>
     <div class="topbar-actions">

@@ -250,11 +250,11 @@
           business_name: businessName, type: businessType, slug,
           description: '', address: '', phone: '', email,
         });
-        const data = loadData();
-        data.profile.business_name = businessName;
-        data.profile.type = businessType;
-        data.profile.slug = slug;
-        saveData(data);
+        const seed = defaultData();
+        seed.profile.business_name = businessName;
+        seed.profile.type = businessType;
+        seed.profile.slug = slug;
+        await window.reservoAuth.saveBusinessData(uid, seed);
         location.href = 'index.html';
       } else {
         location.href = 'area.html';

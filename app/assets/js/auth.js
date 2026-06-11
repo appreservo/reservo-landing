@@ -45,6 +45,15 @@ function upsertBusinessDirectory(uid, business) {
   return setDoc(doc(db, 'businesses', uid), { ...business, updatedAt: serverTimestamp() }, { merge: true });
 }
 
+async function getBusinessData(uid) {
+  const snap = await getDoc(doc(db, 'businessData', uid));
+  return snap.exists() ? snap.data() : null;
+}
+
+function saveBusinessData(uid, data) {
+  return setDoc(doc(db, 'businessData', uid), data);
+}
+
 async function listBusinesses() {
   const snap = await getDocs(collection(db, 'businesses'));
   return snap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -52,9 +61,14 @@ async function listBusinesses() {
 
 function requireAuth() {
   return new Promise((resolve) => {
-    onAuthStateChanged(auth, (user) => {
+    onAuthStateChanged(auth, async (user) => {
       if (user) {
         document.documentElement.classList.remove('auth-pending');
+        const profile = await getUserProfile(user.uid).catch(() => null);
+        const displayName = (profile && profile.name) || user.email;
+        document.querySelectorAll('.js-user-name').forEach(el => { el.textContent = displayName; });
+        window.reservoAuth.currentUser = user;
+        window.dispatchEvent(new Event('reservo-auth-ready'));
         resolve(user);
       } else {
         location.href = 'login.html';
@@ -66,10 +80,12 @@ function requireAuth() {
 window.reservoAuth = {
   auth, db, login, register, logout, requireAuth, resetPassword,
   createUserProfile, getUserProfile, upsertBusinessDirectory, listBusinesses,
+  getBusinessData, saveBusinessData,
   serverTimestamp,
 };
 export {
   auth, db, login, register, logout, requireAuth, resetPassword,
   createUserProfile, getUserProfile, upsertBusinessDirectory, listBusinesses,
+  getBusinessData, saveBusinessData,
   serverTimestamp,
 };

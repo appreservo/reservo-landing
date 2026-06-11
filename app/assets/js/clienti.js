@@ -1,5 +1,5 @@
-(function () {
-  const data = loadData();
+(async function () {
+  const data = await loadData();
   renderLayout('Clienti', data);
 
   const customers = getCustomers(data);

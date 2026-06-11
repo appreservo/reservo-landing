@@ -1,5 +1,5 @@
-(function () {
-  const data = loadData();
+(async function () {
+  const data = await loadData();
   renderLayout('Dashboard', data);
 
   const today = todayStr();

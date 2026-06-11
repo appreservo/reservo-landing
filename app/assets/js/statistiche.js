@@ -1,5 +1,5 @@
-(function () {
-  const data = loadData();
+(async function () {
+  const data = await loadData();
   renderLayout('Statistiche', data);
 
   const NAVY = '#1B2F6E', GOLD = '#C9A227', GREEN = '#16a34a', ORANGE = '#d97706', RED = '#dc2626', GRAY = '#9ca3af';
