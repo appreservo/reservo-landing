@@ -29,11 +29,28 @@
       </div>
       <div id="loginError" class="login-error"></div>
       <button type="submit" class="btn btn-primary w-full" id="loginSubmit">Accedi</button>
+      <p class="login-forgot">
+        <a href="#" id="forgotLink">Password dimenticata?</a>
+      </p>
+    </form>
+
+    <form id="resetForm" class="hidden">
+      <p class="text-mid small mb-3">Inserisci la tua email: ti invieremo un link per reimpostare la password.</p>
+      <div class="field">
+        <label>Email</label>
+        <input type="email" id="resetEmail" autocomplete="email" required>
+      </div>
+      <div id="resetError" class="login-error"></div>
+      <div id="resetSuccess" class="login-success"></div>
+      <button type="submit" class="btn btn-primary w-full" id="resetSubmit">Invia link di recupero</button>
+      <p class="login-forgot">
+        <a href="#" id="backToLoginLink">Torna al login</a>
+      </p>
     </form>
   </div>
 
 <script type="module">
-  import { auth, login } from './assets/js/auth.js';
+  import { auth, login, resetPassword } from './assets/js/auth.js';
   import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
 
   onAuthStateChanged(auth, (user) => {
@@ -70,6 +87,50 @@
       errorEl.classList.add('show');
       submitBtn.disabled = false;
       submitBtn.textContent = 'Accedi';
+    }
+  });
+
+  // --- Recupero password ---
+  const resetForm = document.getElementById('resetForm');
+  const resetError = document.getElementById('resetError');
+  const resetSuccess = document.getElementById('resetSuccess');
+  const resetSubmit = document.getElementById('resetSubmit');
+  const forgotLink = document.getElementById('forgotLink');
+  const backToLoginLink = document.getElementById('backToLoginLink');
+
+  forgotLink.addEventListener('click', (e) => {
+    e.preventDefault();
+    form.classList.add('hidden');
+    resetForm.classList.remove('hidden');
+  });
+
+  backToLoginLink.addEventListener('click', (e) => {
+    e.preventDefault();
+    resetForm.classList.add('hidden');
+    form.classList.remove('hidden');
+    resetError.classList.remove('show');
+    resetSuccess.classList.remove('show');
+  });
+
+  resetForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('resetEmail').value;
+
+    resetError.classList.remove('show');
+    resetSuccess.classList.remove('show');
+    resetSubmit.disabled = true;
+    resetSubmit.textContent = 'Invio in corso…';
+
+    try {
+      await resetPassword(email);
+      resetSuccess.textContent = 'Email inviata! Controlla la tua casella di posta per reimpostare la password.';
+      resetSuccess.classList.add('show');
+    } catch (err) {
+      resetError.textContent = errorMessages[err.code] || 'Invio non riuscito. Riprova.';
+      resetError.classList.add('show');
+    } finally {
+      resetSubmit.disabled = false;
+      resetSubmit.textContent = 'Invia link di recupero';
     }
   });
 </script>

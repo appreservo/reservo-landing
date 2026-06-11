@@ -85,6 +85,45 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); bo
 .alert-success { background: #dcfce7; color: #16a34a; }
 .alert-info { background: rgba(27,47,110,.08); color: var(--primary); }
 
+/* BOOKING WIZARD */
+.booking-steps { display: flex; justify-content: center; gap: .6rem; margin-bottom: 1.5rem; }
+.booking-steps .step {
+  width: 30px; height: 30px; border-radius: 50%;
+  background: #e5e7eb; color: var(--text-mid);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: .85rem;
+}
+.booking-steps .step.active { background: var(--accent); color: var(--primary); }
+.booking-steps .step.done { background: var(--primary); color: #fff; }
+.booking-step { display: none; }
+.booking-step.active { display: block; }
+.service-cards { display: flex; flex-direction: column; gap: .6rem; margin-bottom: 1rem; }
+.service-card {
+  border: 1px solid var(--border); border-radius: 10px; padding: .8rem 1rem;
+  cursor: pointer; display: flex; justify-content: space-between; align-items: center;
+}
+.service-card.selected { border-color: var(--accent); background: rgba(201,162,39,.08); }
+.service-card .name { font-weight: 800; color: var(--primary); }
+.service-card .meta { color: var(--text-mid); font-size: .82rem; }
+.slot-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: .5rem; margin-bottom: .6rem; }
+.slot-btn {
+  padding: .5rem; border: 1px solid var(--border); border-radius: 8px;
+  background: #fff; cursor: pointer; font-weight: 700; font-size: .85rem; font-family: inherit;
+}
+.slot-btn.selected { background: var(--accent); border-color: var(--accent); color: var(--primary); }
+.slot-btn:disabled { opacity: .4; cursor: not-allowed; }
+.btn-row { display: flex; gap: .6rem; }
+.btn-row .btn { width: auto; flex: 1; }
+.booking-summary {
+  background: rgba(27,47,110,.05); border-radius: 10px;
+  padding: .9rem 1rem; margin-bottom: 1rem; font-size: .9rem;
+}
+.booking-summary strong { color: var(--primary); }
+.booking-ref {
+  font-size: 1.4rem; font-weight: 800; color: var(--primary);
+  text-align: center; margin: .5rem 0 1rem; letter-spacing: .04em;
+}
+
 /* EVENTS */
 .event-card { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 1.2rem; margin-bottom: 1rem; }
 .event-card h3 { color: var(--primary); margin: 0 0 .3rem; }

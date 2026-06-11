@@ -48,22 +48,65 @@
   <h2>Prenota un tavolo<span class="underline"></span></h2>
   <div class="box">
     <div id="bookingAlert"></div>
+
+    <div class="booking-steps" id="bookingSteps">
+      <span class="step" data-step="1">1</span>
+      <span class="step" data-step="2">2</span>
+      <span class="step" data-step="3">3</span>
+      <span class="step" data-step="4">4</span>
+    </div>
+
     <form id="bookingForm">
-      <div class="field-row">
-        <div><label>Nome e cognome</label><input type="text" id="cName" required></div>
-        <div><label>Persone</label><input type="number" id="cParty" min="1" value="2" required></div>
+      <!-- Step 1: servizio e persone -->
+      <div class="booking-step" data-step="1">
+        <label>Servizio</label>
+        <div class="service-cards" id="serviceCards"></div>
+        <label>Numero di persone</label>
+        <input type="number" id="cParty" min="1" value="2" required>
+        <div class="btn-row">
+          <button type="button" class="btn btn-gold" data-next="2">Continua</button>
+        </div>
       </div>
-      <div class="field-row">
-        <div><label>Email</label><input type="email" id="cEmail" required></div>
-        <div><label>Telefono</label><input type="text" id="cPhone"></div>
+
+      <!-- Step 2: data e orario -->
+      <div class="booking-step" data-step="2">
+        <label>Data</label>
+        <input type="date" id="cDate" required>
+        <div id="slotWrap">
+          <label>Orario</label>
+          <div class="slot-grid" id="slotGrid"></div>
+          <div id="slotMessage" class="text-mid small"></div>
+        </div>
+        <div class="btn-row">
+          <button type="button" class="btn btn-outline" data-prev="1">Indietro</button>
+          <button type="button" class="btn btn-gold" data-next="3" id="step2Next" disabled>Continua</button>
+        </div>
       </div>
-      <div class="field-row">
-        <div><label>Data</label><input type="date" id="cDate" required></div>
-        <div><label>Ora</label><input type="time" id="cTime" required></div>
+
+      <!-- Step 3: dati cliente -->
+      <div class="booking-step" data-step="3">
+        <div class="booking-summary" id="bookingSummary"></div>
+        <div class="field-row">
+          <div><label>Nome e cognome</label><input type="text" id="cName" required></div>
+          <div><label>Telefono</label><input type="text" id="cPhone"></div>
+        </div>
+        <label>Email</label>
+        <input type="email" id="cEmail" required>
+        <label>Note (opzionale)</label>
+        <textarea id="cNotes" rows="2"></textarea>
+        <div class="btn-row">
+          <button type="button" class="btn btn-outline" data-prev="2">Indietro</button>
+          <button type="submit" class="btn btn-gold">Conferma prenotazione</button>
+        </div>
       </div>
-      <label>Note (opzionale)</label>
-      <textarea id="cNotes" rows="2"></textarea>
-      <button type="submit" class="btn btn-gold">Prenota</button>
+
+      <!-- Step 4: conferma -->
+      <div class="booking-step" data-step="4">
+        <div id="bookingConfirmation"></div>
+        <div class="btn-row">
+          <button type="button" class="btn btn-outline" id="newBookingBtn">Nuova prenotazione</button>
+        </div>
+      </div>
     </form>
   </div>
 </section>

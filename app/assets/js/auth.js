@@ -1,6 +1,6 @@
 /* Reservo demo - autenticazione reale via Firebase Authentication */
 import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
-import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAQNqwqsDX2bwNKjj1zt-PCfHH0R2KNjHM",
@@ -22,6 +22,10 @@ function logout() {
   return signOut(auth).then(() => { location.href = 'login.html'; });
 }
 
+function resetPassword(email) {
+  return sendPasswordResetEmail(auth, email);
+}
+
 function requireAuth() {
   return new Promise((resolve) => {
     onAuthStateChanged(auth, (user) => {
@@ -35,5 +39,5 @@ function requireAuth() {
   });
 }
 
-window.reservoAuth = { auth, login, logout, requireAuth };
-export { auth, login, logout, requireAuth };
+window.reservoAuth = { auth, login, logout, requireAuth, resetPassword };
+export { auth, login, logout, requireAuth, resetPassword };

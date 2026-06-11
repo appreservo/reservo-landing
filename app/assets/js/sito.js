@@ -73,17 +73,176 @@
   }
   renderMenu();
 
-  // ---------- booking form ----------
-  document.getElementById('bookingForm').addEventListener('submit', (e) => {
+  // ---------- booking form (wizard) ----------
+  const BOOKING_MIN_NOTICE_HOURS = 2;
+  const BOOKING_ADVANCE_DAYS = 30;
+
+  const bookingForm = document.getElementById('bookingForm');
+  const bookingState = { step: 1, serviceId: null, partySize: 2, date: '', time: '' };
+
+  function goToStep(step) {
+    bookingState.step = step;
+    bookingForm.querySelectorAll('.booking-step').forEach(el => {
+      el.classList.toggle('active', Number(el.dataset.step) === step);
+    });
+    document.querySelectorAll('#bookingSteps .step').forEach(el => {
+      const n = Number(el.dataset.step);
+      el.classList.toggle('active', n === step);
+      el.classList.toggle('done', n < step);
+    });
+    if (step === 3) renderBookingSummary();
+  }
+
+  // --- step 1: servizio + persone ---
+  function renderServiceCards() {
+    const container = document.getElementById('serviceCards');
+    const services = data.services || [];
+    if (services.length === 0) {
+      container.innerHTML = `<p class="text-mid">Nessun servizio disponibile al momento.</p>`;
+      return;
+    }
+    container.innerHTML = services.map(s => `
+      <div class="service-card" data-service="${s.id}">
+        <span class="name">${s.name}</span>
+        <span class="meta">${s.duration} min${s.price ? ' · ' + euro(s.price) : ''}</span>
+      </div>`).join('');
+    container.querySelectorAll('.service-card').forEach(card => card.addEventListener('click', () => {
+      bookingState.serviceId = card.dataset.service;
+      bookingState.date = '';
+      bookingState.time = '';
+      document.getElementById('cDate').value = '';
+      document.getElementById('slotGrid').innerHTML = '';
+      document.getElementById('slotMessage').textContent = '';
+      document.getElementById('step2Next').disabled = true;
+      container.querySelectorAll('.service-card').forEach(c => c.classList.toggle('selected', c === card));
+    }));
+    if (services.length === 1) {
+      bookingState.serviceId = services[0].id;
+      container.querySelector('.service-card').classList.add('selected');
+    }
+  }
+  renderServiceCards();
+
+  document.querySelector('[data-next="2"]').addEventListener('click', () => {
+    if (!bookingState.serviceId) { showToast('Seleziona un servizio', 'error'); return; }
+    bookingState.partySize = parseInt(document.getElementById('cParty').value, 10) || 1;
+    const minDate = fmtDate(new Date(Date.now() + BOOKING_MIN_NOTICE_HOURS * 3600 * 1000));
+    const maxDate = fmtDate(addDays(new Date(), BOOKING_ADVANCE_DAYS));
+    const dateInput = document.getElementById('cDate');
+    dateInput.min = minDate;
+    dateInput.max = maxDate;
+    goToStep(2);
+  });
+
+  // --- step 2: data + slot ---
+  function getAvailableSlots(dateStr) {
+    const service = (data.services || []).find(s => s.id === bookingState.serviceId);
+    if (!service) return [];
+
+    const date = new Date(dateStr + 'T00:00:00');
+    const jsDay = date.getDay();
+    const ourDay = jsDay === 0 ? 6 : jsDay - 1;
+    const hours = data.hours.find(h => h.day === ourDay);
+    if (!hours || hours.closed || !hours.open || !hours.close) return [];
+    if (data.closures.some(c => c.date === dateStr)) return [];
+
+    const minNotice = new Date(Date.now() + BOOKING_MIN_NOTICE_HOURS * 3600 * 1000);
+    const duration = service.duration || 90;
+
+    const [oh, om] = hours.open.split(':').map(Number);
+    const [ch, cm] = hours.close.split(':').map(Number);
+    let openMin = oh * 60 + om;
+    let closeMin = ch * 60 + cm;
+    if (closeMin <= openMin) closeMin += 24 * 60; // overnight
+
+    const suitableTables = (data.tables || []).filter(t => t.capacity >= bookingState.partySize);
+    if (suitableTables.length === 0) return [];
+
+    const existing = data.bookings.filter(b => b.date === dateStr && (b.status === 'confirmed' || b.status === 'pending'));
+
+    const slots = [];
+    for (let t = openMin; t + duration <= closeMin; t += duration) {
+      const slotStart = new Date(date);
+      slotStart.setMinutes(slotStart.getMinutes() + t);
+      if (slotStart <= minNotice) continue;
+      const hh = String(Math.floor(t / 60) % 24).padStart(2, '0');
+      const mm = String(t % 60).padStart(2, '0');
+      const timeStr = `${hh}:${mm}`;
+      const bookedCount = existing.filter(b => b.time === timeStr).length;
+      slots.push({ time: timeStr, available: bookedCount < suitableTables.length });
+    }
+    return slots;
+  }
+
+  function renderSlots() {
+    const grid = document.getElementById('slotGrid');
+    const msg = document.getElementById('slotMessage');
+    bookingState.time = '';
+    document.getElementById('step2Next').disabled = true;
+
+    const dateStr = document.getElementById('cDate').value;
+    bookingState.date = dateStr;
+    if (!dateStr) { grid.innerHTML = ''; msg.textContent = ''; return; }
+
+    const slots = getAvailableSlots(dateStr);
+    if (slots.length === 0) {
+      grid.innerHTML = '';
+      msg.textContent = 'Nessun orario disponibile per la data scelta. Prova con un altro giorno.';
+      return;
+    }
+    msg.textContent = '';
+    grid.innerHTML = slots.map(s =>
+      `<button type="button" class="slot-btn" data-time="${s.time}" ${s.available ? '' : 'disabled'}>${s.time}</button>`).join('');
+
+    grid.querySelectorAll('.slot-btn:not(:disabled)').forEach(btn => btn.addEventListener('click', () => {
+      bookingState.time = btn.dataset.time;
+      grid.querySelectorAll('.slot-btn').forEach(b => b.classList.toggle('selected', b === btn));
+      document.getElementById('step2Next').disabled = false;
+    }));
+  }
+  document.getElementById('cDate').addEventListener('change', renderSlots);
+
+  document.querySelector('[data-next="3"]').addEventListener('click', () => {
+    if (!bookingState.date || !bookingState.time) { showToast('Seleziona data e orario', 'error'); return; }
+    goToStep(3);
+  });
+
+  // --- step 3: riepilogo + dati cliente ---
+  function renderBookingSummary() {
+    const service = (data.services || []).find(s => s.id === bookingState.serviceId);
+    document.getElementById('bookingSummary').innerHTML = `
+      <div><strong>${service ? service.name : ''}</strong> · ${bookingState.partySize} ${bookingState.partySize === 1 ? 'persona' : 'persone'}</div>
+      <div>${fmtDateLong(bookingState.date)} — ore ${bookingState.time}</div>
+    `;
+  }
+
+  // --- back buttons ---
+  bookingForm.querySelectorAll('[data-prev]').forEach(btn => btn.addEventListener('click', () => {
+    goToStep(Number(btn.dataset.prev));
+  }));
+
+  // --- generate booking reference ---
+  function generateBookingReference() {
+    const today = todayStr().replace(/-/g, '');
+    const count = data.bookings.filter(b => (b.created_at || '').slice(0, 10) === todayStr()).length + 1;
+    return `RZ-${today}-${String(count).padStart(4, '0')}`;
+  }
+
+  // --- step 4: submit ---
+  bookingForm.addEventListener('submit', (e) => {
     e.preventDefault();
+    const service = (data.services || []).find(s => s.id === bookingState.serviceId);
     const booking = {
       id: uid(),
+      reference: generateBookingReference(),
       customer_name: document.getElementById('cName').value.trim(),
-      party_size: parseInt(document.getElementById('cParty').value, 10) || 1,
+      party_size: bookingState.partySize,
       email: document.getElementById('cEmail').value.trim(),
       phone: document.getElementById('cPhone').value.trim(),
-      date: document.getElementById('cDate').value,
-      time: document.getElementById('cTime').value,
+      date: bookingState.date,
+      time: bookingState.time,
+      service_id: bookingState.serviceId,
+      service_name: service ? service.name : '',
       notes: document.getElementById('cNotes').value.trim(),
       status: p.booking_mode === 'auto' ? 'confirmed' : 'pending',
       created_at: new Date().toISOString(),
@@ -91,15 +250,36 @@
     data.bookings.push(booking);
     saveData(data);
 
-    const alertEl = document.getElementById('bookingAlert');
-    if (booking.status === 'confirmed') {
-      alertEl.innerHTML = `<div class="alert alert-success">Prenotazione confermata! Riceverai una email di conferma a ${booking.email}.</div>`;
-    } else {
-      alertEl.innerHTML = `<div class="alert alert-info">Richiesta inviata! Il gestore confermerà la tua prenotazione a breve via email.</div>`;
-    }
-    document.getElementById('bookingForm').reset();
-    document.getElementById('cParty').value = 2;
+    const confirmedMsg = `<div class="alert alert-success">Prenotazione confermata! Riceverai una email di conferma a ${booking.email}.</div>`;
+    const pendingMsg = `<div class="alert alert-info">Richiesta inviata! Il gestore confermerà la tua prenotazione a breve via email.</div>`;
+
+    document.getElementById('bookingConfirmation').innerHTML = `
+      <div class="booking-ref">${booking.reference}</div>
+      ${booking.status === 'confirmed' ? confirmedMsg : pendingMsg}
+      <div class="booking-summary">
+        <div><strong>${booking.service_name}</strong> · ${booking.party_size} ${booking.party_size === 1 ? 'persona' : 'persone'}</div>
+        <div>${fmtDateLong(booking.date)} — ore ${booking.time}</div>
+        <div>${booking.customer_name}</div>
+      </div>
+      <p class="text-mid small">Conserva il codice prenotazione: ti servirà per cercarla nella sezione "Le mie prenotazioni".</p>
+    `;
+    goToStep(4);
   });
+
+  document.getElementById('newBookingBtn').addEventListener('click', () => {
+    bookingForm.reset();
+    document.getElementById('cParty').value = 2;
+    bookingState.serviceId = null;
+    bookingState.date = '';
+    bookingState.time = '';
+    document.getElementById('slotGrid').innerHTML = '';
+    document.getElementById('slotMessage').textContent = '';
+    document.querySelectorAll('#serviceCards .service-card').forEach(c => c.classList.remove('selected'));
+    renderServiceCards();
+    goToStep(1);
+  });
+
+  goToStep(1);
 
   // ---------- search bookings ----------
   document.getElementById('searchBtn').addEventListener('click', () => {
@@ -116,6 +296,7 @@
     results.innerHTML = matches.map(b => `
       <div class="event-card">
         <div class="meta">${fmtDateLong(b.date)} — ore ${b.time}</div>
+        ${b.reference ? `<div class="text-mid small">${b.reference}</div>` : ''}
         <div>${b.customer_name} · ${b.party_size} persone</div>
         <div style="margin:.4rem 0"><span class="tag" style="background:rgba(27,47,110,.08); color:var(--primary)">${statusLabel(b.status)}</span></div>
         ${(b.status === 'pending' || b.status === 'confirmed') ? `<button class="btn btn-outline" data-cancel="${b.id}" style="width:auto; padding:.4rem .9rem; font-size:.8rem">Annulla prenotazione</button>` : ''}
