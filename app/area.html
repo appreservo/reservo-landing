@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="it" class="auth-pending">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Area cliente · Reservo</title>
+<link rel="icon" href="assets/img/logo.png">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+<style>html.auth-pending body { visibility: hidden; }</style>
+<script type="module">
+  import { requireAuth } from './assets/js/auth.js';
+  requireAuth();
+</script>
+</head>
+<body>
+<header class="topbar">
+  <div class="login-logo" style="margin-bottom:0;">
+    <img src="assets/img/logo.png" alt="Reservo">
+    <span>Reservo</span>
+  </div>
+  <div class="topbar-actions">
+    <button class="btn btn-outline btn-sm" id="logoutBtn">Esci</button>
+  </div>
+</header>
+<main class="content">
+
+  <div class="card mb-3">
+    <div class="card-header">
+      <h2>Cerca attività</h2>
+    </div>
+    <div class="field">
+      <input type="text" id="searchInput" placeholder="Cerca per nome, tipo o città…">
+    </div>
+    <div id="businessList" class="grid grid-2"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h2>Le mie prenotazioni</h2>
+    </div>
+    <div class="empty-state">
+      <p>Qui vedrai le prenotazioni fatte sui siti delle attività, appena disponibile.</p>
+    </div>
+  </div>
+
+</main>
+<script src="assets/js/db.js"></script>
+<script src="assets/js/area.js"></script>
+<script type="module" src="assets/js/feedback-widget.js"></script>
+</body>
+</html>

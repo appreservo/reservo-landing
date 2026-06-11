@@ -5,6 +5,16 @@ const ALLERGENS = ['Glutine','Lattosio','Uova','Frutta a guscio','Pesce','Crosta
 
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
 
+function slugify(text) {
+  return text
+    .toString()
+    .normalize('NFD').replace(new RegExp('[̀-ͯ]', 'g'), '')
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
 function fmtDate(d) {
   const y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,'0'), day = String(d.getDate()).padStart(2,'0');
   return `${y}-${m}-${day}`;

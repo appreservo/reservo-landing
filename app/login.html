@@ -32,6 +32,9 @@
       <p class="login-forgot">
         <a href="#" id="forgotLink">Password dimenticata?</a>
       </p>
+      <p class="login-forgot">
+        Non hai un account? <a href="#" id="registerLink">Registrati</a>
+      </p>
     </form>
 
     <form id="resetForm" class="hidden">
@@ -47,14 +50,67 @@
         <a href="#" id="backToLoginLink">Torna al login</a>
       </p>
     </form>
+
+    <form id="registerForm" class="hidden">
+      <p class="text-mid small mb-3">Crea un nuovo account Reservo.</p>
+
+      <div class="role-toggle">
+        <button type="button" class="role-btn active" id="roleGestoreBtn" data-role="gestore">Gestisco un'attività</button>
+        <button type="button" class="role-btn" id="roleClienteBtn" data-role="cliente">Sono un cliente</button>
+      </div>
+
+      <div class="field">
+        <label>Nome e cognome</label>
+        <input type="text" id="regName" autocomplete="name" required>
+      </div>
+      <div class="field">
+        <label>Email</label>
+        <input type="email" id="regEmail" autocomplete="email" required>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Password</label>
+          <input type="password" id="regPassword" autocomplete="new-password" required>
+        </div>
+        <div class="field">
+          <label>Conferma password</label>
+          <input type="password" id="regPasswordConfirm" autocomplete="new-password" required>
+        </div>
+      </div>
+
+      <div id="businessFields">
+        <div class="field">
+          <label>Nome attività</label>
+          <input type="text" id="regBusinessName" autocomplete="organization">
+        </div>
+        <div class="field">
+          <label>Tipo attività</label>
+          <select id="regBusinessType">
+            <option value="restaurant">Ristorante / Bar</option>
+            <option value="artisan">Artigiano / Estetista</option>
+            <option value="professional">Professionista / Studio</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="registerError" class="login-error"></div>
+      <button type="submit" class="btn btn-primary w-full" id="registerSubmit">Crea account</button>
+      <p class="login-forgot">
+        <a href="#" id="backToLoginFromRegisterLink">Torna al login</a>
+      </p>
+    </form>
   </div>
 
+<script src="assets/js/db.js"></script>
 <script type="module">
-  import { auth, login, resetPassword } from './assets/js/auth.js';
+  import { auth, login, register, resetPassword, createUserProfile, getUserProfile, upsertBusinessDirectory, serverTimestamp } from './assets/js/auth.js';
   import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
 
-  onAuthStateChanged(auth, (user) => {
-    if (user) location.href = 'index.html';
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      const profile = await getUserProfile(user.uid).catch(() => null);
+      location.href = (profile && profile.role === 'cliente') ? 'area.html' : 'index.html';
+    }
   });
 
   const errorMessages = {
@@ -64,6 +120,8 @@
     'auth/wrong-password': 'Email o password non corretti.',
     'auth/invalid-credential': 'Email o password non corretti.',
     'auth/too-many-requests': 'Troppi tentativi. Riprova tra qualche minuto.',
+    'auth/email-already-in-use': 'Email già registrata.',
+    'auth/weak-password': 'Password troppo debole (minimo 6 caratteri).',
   };
 
   const form = document.getElementById('loginForm');
@@ -80,8 +138,9 @@
     submitBtn.textContent = 'Accesso in corso…';
 
     try {
-      await login(email, password);
-      location.href = 'index.html';
+      const cred = await login(email, password);
+      const profile = await getUserProfile(cred.user.uid).catch(() => null);
+      location.href = (profile && profile.role === 'cliente') ? 'area.html' : 'index.html';
     } catch (err) {
       errorEl.textContent = errorMessages[err.code] || 'Accesso non riuscito. Riprova.';
       errorEl.classList.add('show');
@@ -110,6 +169,102 @@
     form.classList.remove('hidden');
     resetError.classList.remove('show');
     resetSuccess.classList.remove('show');
+  });
+
+  // --- Registrazione ---
+  const registerForm = document.getElementById('registerForm');
+  const registerError = document.getElementById('registerError');
+  const registerSubmit = document.getElementById('registerSubmit');
+  const registerLink = document.getElementById('registerLink');
+  const backToLoginFromRegisterLink = document.getElementById('backToLoginFromRegisterLink');
+  const roleGestoreBtn = document.getElementById('roleGestoreBtn');
+  const roleClienteBtn = document.getElementById('roleClienteBtn');
+  const businessFields = document.getElementById('businessFields');
+  let selectedRole = 'gestore';
+
+  registerLink.addEventListener('click', (e) => {
+    e.preventDefault();
+    form.classList.add('hidden');
+    registerForm.classList.remove('hidden');
+  });
+
+  backToLoginFromRegisterLink.addEventListener('click', (e) => {
+    e.preventDefault();
+    registerForm.classList.add('hidden');
+    form.classList.remove('hidden');
+    registerError.classList.remove('show');
+  });
+
+  function setRole(role) {
+    selectedRole = role;
+    roleGestoreBtn.classList.toggle('active', role === 'gestore');
+    roleClienteBtn.classList.toggle('active', role === 'cliente');
+    businessFields.classList.toggle('hidden', role !== 'gestore');
+  }
+  roleGestoreBtn.addEventListener('click', () => setRole('gestore'));
+  roleClienteBtn.addEventListener('click', () => setRole('cliente'));
+
+  registerForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name = document.getElementById('regName').value.trim();
+    const email = document.getElementById('regEmail').value.trim();
+    const password = document.getElementById('regPassword').value;
+    const passwordConfirm = document.getElementById('regPasswordConfirm').value;
+    const businessName = document.getElementById('regBusinessName').value.trim();
+    const businessType = document.getElementById('regBusinessType').value;
+
+    registerError.classList.remove('show');
+
+    if (password.length < 6) {
+      registerError.textContent = 'La password deve avere almeno 6 caratteri.';
+      registerError.classList.add('show');
+      return;
+    }
+    if (password !== passwordConfirm) {
+      registerError.textContent = 'Le password non coincidono.';
+      registerError.classList.add('show');
+      return;
+    }
+    if (selectedRole === 'gestore' && !businessName) {
+      registerError.textContent = 'Inserisci il nome della tua attività.';
+      registerError.classList.add('show');
+      return;
+    }
+
+    registerSubmit.disabled = true;
+    registerSubmit.textContent = 'Creazione account…';
+
+    try {
+      const cred = await register(email, password);
+      const uid = cred.user.uid;
+      const userProfile = { role: selectedRole, name, email, createdAt: serverTimestamp() };
+      if (selectedRole === 'gestore') {
+        userProfile.businessName = businessName;
+        userProfile.businessType = businessType;
+      }
+      await createUserProfile(uid, userProfile);
+
+      if (selectedRole === 'gestore') {
+        const slug = slugify(businessName);
+        await upsertBusinessDirectory(uid, {
+          business_name: businessName, type: businessType, slug,
+          description: '', address: '', phone: '', email,
+        });
+        const data = loadData();
+        data.profile.business_name = businessName;
+        data.profile.type = businessType;
+        data.profile.slug = slug;
+        saveData(data);
+        location.href = 'index.html';
+      } else {
+        location.href = 'area.html';
+      }
+    } catch (err) {
+      registerError.textContent = errorMessages[err.code] || 'Registrazione non riuscita. Riprova.';
+      registerError.classList.add('show');
+      registerSubmit.disabled = false;
+      registerSubmit.textContent = 'Crea account';
+    }
   });
 
   resetForm.addEventListener('submit', async (e) => {

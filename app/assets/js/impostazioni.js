@@ -39,6 +39,19 @@
     p.booking_mode = document.getElementById('pBookingMode').value;
     p.notification_emails = document.getElementById('pNotifyEmails').value.trim();
     saveData(data);
+
+    if (window.reservoAuth && window.reservoAuth.auth.currentUser) {
+      window.reservoAuth.upsertBusinessDirectory(window.reservoAuth.auth.currentUser.uid, {
+        business_name: p.business_name,
+        type: p.type,
+        slug: p.slug || slugify(p.business_name),
+        description: p.description,
+        address: p.address,
+        phone: p.phone,
+        email: p.email,
+      }).catch(() => {});
+    }
+
     showToast('Profilo salvato', 'success');
   });
 
