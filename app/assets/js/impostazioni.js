@@ -171,9 +171,9 @@
 
   // ---------- dati ----------
   document.getElementById('resetDemoBtn').addEventListener('click', () => {
-    if (!confirm('Ripristinare i dati demo originali? Tutte le modifiche andranno perse.')) return;
+    if (!confirm('Ripristinare i dati di esempio originali? Tutte le modifiche andranno perse.')) return;
     resetDemoData();
-    showToast('Dati demo ripristinati', 'success');
+    showToast('Dati di esempio ripristinati', 'success');
     setTimeout(() => location.reload(), 600);
   });
   document.getElementById('clearAllBtn').addEventListener('click', () => {

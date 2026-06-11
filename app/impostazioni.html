@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="it">
+<html lang="it" class="auth-pending">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,8 +7,11 @@
 <link rel="icon" href="assets/img/logo.png">
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/css/style.css">
-<script src="assets/js/auth.js"></script>
-<script>requireAuth();</script>
+<style>html.auth-pending body { visibility: hidden; }</style>
+<script type="module">
+  import { requireAuth } from './assets/js/auth.js';
+  requireAuth();
+</script>
 </head>
 <body>
 <div class="app-shell">
@@ -111,9 +114,9 @@
       <div class="tab-content" id="tab-dati">
         <div class="card" style="max-width:640px">
           <div class="card-header"><h2>Gestione dati locali</h2></div>
-          <p class="text-mid small">Tutti i dati di questa demo sono salvati nel browser (localStorage), nessun dato viene inviato a server esterni.</p>
+          <p class="text-mid small">Tutti i dati di questo gestionale sono salvati nel browser (localStorage), nessun dato viene inviato a server esterni.</p>
           <div class="flex gap-2 mt-3">
-            <button class="btn btn-outline" id="resetDemoBtn">Ripristina dati demo</button>
+            <button class="btn btn-outline" id="resetDemoBtn">Ripristina dati di esempio</button>
             <button class="btn btn-danger" id="clearAllBtn">Cancella tutti i dati</button>
           </div>
         </div>

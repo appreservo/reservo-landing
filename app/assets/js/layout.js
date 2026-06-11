@@ -85,7 +85,7 @@ function renderLayout(pageTitle, data) {
     document.getElementById('sidebar').classList.toggle('open');
   });
 
-  document.getElementById('logoutBtn').addEventListener('click', logout);
+  document.getElementById('logoutBtn').addEventListener('click', () => window.reservoAuth.logout());
 
   fillIcons();
 }

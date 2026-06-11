@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="it">
+<html lang="it" class="auth-pending">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,8 +7,11 @@
 <link rel="icon" href="assets/img/logo.png">
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/css/style.css">
-<script src="assets/js/auth.js"></script>
-<script>requireAuth();</script>
+<style>html.auth-pending body { visibility: hidden; }</style>
+<script type="module">
+  import { requireAuth } from './assets/js/auth.js';
+  requireAuth();
+</script>
 </head>
 <body>
 <div class="app-shell">

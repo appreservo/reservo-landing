@@ -124,7 +124,7 @@ function defaultData() {
         const off = -25 + i * 2;
         list.push({
           id: uid(),
-          customer_name: 'Cliente Demo ' + (i+1), email: `cliente${i+1}@example.com`, phone: '320 000' + (1000+i),
+          customer_name: 'Cliente ' + (i+1), email: `cliente${i+1}@example.com`, phone: '320 000' + (1000+i),
           date: fmtDate(addDays(today, off)), time: ['12:30','13:00','19:30','20:00','20:30','21:00'][i % 6],
           party_size: [2,2,4,3,2,5][i % 6], status: 'confirmed',
           notes: '', created_at: new Date(addDays(today, off-1)).toISOString(),
