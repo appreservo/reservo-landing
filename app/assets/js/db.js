@@ -145,6 +145,27 @@ function defaultData() {
   };
 }
 
+/* sottoinsieme pubblico dei dati, usato dal sito pubblico (sito.html?b=slug) */
+function buildPublicData(data) {
+  return {
+    profile: data.profile,
+    hours: data.hours,
+    closures: data.closures,
+    menu: data.menu,
+    services: data.services,
+    tables: data.tables,
+    events: (data.events || []).map(ev => ({
+      id: ev.id, title: ev.title, description: ev.description,
+      date: ev.date, time: ev.time, location: ev.location,
+      max_participants: ev.max_participants,
+      taken: (ev.registrations || []).reduce((s, r) => s + (r.people || 1), 0),
+    })),
+    bookings: (data.bookings || [])
+      .filter(b => b.status === 'confirmed' || b.status === 'pending')
+      .map(b => ({ date: b.date, time: b.time, status: b.status })),
+  };
+}
+
 let _dataCache = null;
 
 function waitForAuthReady() {
@@ -171,32 +192,49 @@ async function loadData() {
 function saveData(data) {
   _dataCache = data;
   const uid = window.reservoAuth && window.reservoAuth.auth.currentUser && window.reservoAuth.auth.currentUser.uid;
-  if (uid) window.reservoAuth.saveBusinessData(uid, data).catch(() => {});
+  if (uid) {
+    window.reservoAuth.saveBusinessData(uid, data).catch(() => {});
+    window.reservoAuth.savePublicBusinessData(uid, buildPublicData(data)).catch(() => {});
+  }
 }
 
 async function resetDemoData() {
   const uid = window.reservoAuth.auth.currentUser.uid;
   _dataCache = defaultData();
   await window.reservoAuth.saveBusinessData(uid, _dataCache);
+  await window.reservoAuth.savePublicBusinessData(uid, buildPublicData(_dataCache));
   return _dataCache;
 }
 
 async function clearAllData() {
   const uid = window.reservoAuth.auth.currentUser.uid;
-  const data = defaultData();
+  const data = _dataCache || defaultData();
   data.menu = [];
   data.bookings = [];
   data.events = [];
   data.closures = [];
   _dataCache = data;
   await window.reservoAuth.saveBusinessData(uid, data);
+  await window.reservoAuth.savePublicBusinessData(uid, buildPublicData(data));
   return data;
 }
 
+let _liveBookingsCache = null;
+
+/* tutte le prenotazioni: quelle del gestionale + quelle scritte dal sito pubblico (collezione 'bookings') */
+async function loadAllBookings() {
+  const data = await loadData();
+  if (_liveBookingsCache === null) {
+    const uid = window.reservoAuth.auth.currentUser.uid;
+    _liveBookingsCache = await window.reservoAuth.getBusinessBookings(uid).catch(() => []);
+  }
+  return data.bookings.concat(_liveBookingsCache);
+}
+
 /* customers derived from bookings */
-function getCustomers(data) {
+function getCustomers(bookings) {
   const map = new Map();
-  data.bookings.forEach(b => {
+  bookings.forEach(b => {
     const key = b.email || b.phone || b.customer_name;
     if (!map.has(key)) {
       map.set(key, { name: b.customer_name, email: b.email, phone: b.phone, bookings: [] });

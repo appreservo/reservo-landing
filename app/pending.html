@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="it" class="auth-pending">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Account in attesa · Reservo</title>
+<link rel="icon" href="assets/img/logo.png">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+<style>html.auth-pending body { visibility: hidden; }</style>
+<script type="module">
+  import { requireAuth } from './assets/js/auth.js';
+  requireAuth().then(() => {
+    const profile = window.reservoAuth.currentProfile;
+    if (profile && profile.status === 'rejected') {
+      document.getElementById('pendingTitle').textContent = 'Registrazione non approvata';
+      document.getElementById('pendingText').textContent =
+        'La richiesta di registrazione per la tua attività non è stata approvata. Per maggiori informazioni contatta lo staff Reservo.';
+    }
+  });
+</script>
+</head>
+<body class="login-page">
+
+  <div class="login-card" style="text-align:center">
+    <div class="login-logo" style="justify-content:center">
+      <img src="assets/img/logo.png" alt="Reservo">
+      <span>Reservo</span>
+    </div>
+    <h1 id="pendingTitle">Account in attesa di approvazione</h1>
+    <p class="text-mid small mb-3" id="pendingText">
+      Grazie per esserti registrato. Il tuo account gestore è in attesa di approvazione da parte dello staff Reservo.
+      Riceverai accesso al gestionale non appena verrà approvato.
+    </p>
+    <button class="btn btn-outline w-full" id="refreshBtn">Controlla di nuovo</button>
+    <p class="login-forgot">
+      <a href="#" id="logoutLink">Esci</a>
+    </p>
+  </div>
+
+<script type="module">
+  import { logout, getUserProfile, homeForProfile } from './assets/js/auth.js';
+
+  document.getElementById('logoutLink').addEventListener('click', (e) => {
+    e.preventDefault();
+    logout();
+  });
+
+  document.getElementById('refreshBtn').addEventListener('click', async () => {
+    const user = window.reservoAuth.currentUser;
+    if (!user) return;
+    const profile = await getUserProfile(user.uid).catch(() => null);
+    if (profile && profile.status === 'rejected') {
+      document.getElementById('pendingTitle').textContent = 'Registrazione non approvata';
+      document.getElementById('pendingText').textContent =
+        'La richiesta di registrazione per la tua attività non è stata approvata. Per maggiori informazioni contatta lo staff Reservo.';
+      return;
+    }
+    const home = homeForProfile(profile);
+    if (home !== 'pending.html') location.href = home;
+  });
+</script>
+</body>
+</html>

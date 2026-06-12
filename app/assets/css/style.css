@@ -360,6 +360,17 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--gold); bord
   text-align: center;
 }
 
+/* ---------- SIDEBAR OVERLAY ---------- */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.4);
+  z-index: 45;
+  opacity: 0;
+  transition: opacity .25s ease;
+}
+
 /* ---------- RESPONSIVE ---------- */
 @media (max-width: 900px) {
   .grid-4 { grid-template-columns: repeat(2, 1fr); }
@@ -370,6 +381,7 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--gold); bord
   .main { margin-left: 0; }
   .menu-btn { display: block; }
   .field-row { flex-direction: column; gap: 0; }
+  .sidebar-overlay.open { display: block; opacity: 1; }
 }
 
 @media (max-width: 640px) {

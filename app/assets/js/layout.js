@@ -70,6 +70,9 @@ function renderLayout(pageTitle, data) {
     sidebarHtml += `</div>`;
   });
 
+  const siteSlug = data && data.profile && data.profile.slug;
+  const siteHref = 'sito.html' + (siteSlug ? '?b=' + encodeURIComponent(siteSlug) : '');
+
   const topbarHtml = `
     <div class="flex items-center gap-3">
       <button class="menu-btn" id="menuToggle">${ICONS.menuburger}</button>
@@ -83,7 +86,7 @@ function renderLayout(pageTitle, data) {
       <h1>${pageTitle}</h1>
     </div>
     <div class="topbar-actions">
-      <a href="sito.html" target="_blank" class="btn btn-outline btn-sm">${ICONS.external} Anteprima sito</a>
+      <a href="${siteHref}" target="_blank" class="btn btn-outline btn-sm">${ICONS.external} Anteprima sito</a>
       <div class="badge badge-navy">${data && data.profile ? data.profile.business_name : ''}</div>
       <button class="btn btn-outline btn-sm" id="logoutBtn">Esci</button>
     </div>`;
@@ -91,8 +94,30 @@ function renderLayout(pageTitle, data) {
   document.getElementById('sidebar').innerHTML = sidebarHtml;
   document.getElementById('topbar').innerHTML = topbarHtml;
 
+  let overlay = document.getElementById('sidebarOverlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'sidebarOverlay';
+    overlay.className = 'sidebar-overlay';
+    document.body.appendChild(overlay);
+  }
+
+  function setSidebarOpen(open) {
+    document.getElementById('sidebar').classList.toggle('open', open);
+    overlay.classList.toggle('open', open);
+  }
+
   document.getElementById('menuToggle').addEventListener('click', () => {
-    document.getElementById('sidebar').classList.toggle('open');
+    setSidebarOpen(!document.getElementById('sidebar').classList.contains('open'));
+  });
+
+  overlay.addEventListener('click', () => setSidebarOpen(false));
+
+  document.addEventListener('click', (e) => {
+    const sidebar = document.getElementById('sidebar');
+    if (!sidebar.classList.contains('open')) return;
+    if (sidebar.contains(e.target) || e.target.closest('#menuToggle')) return;
+    setSidebarOpen(false);
   });
 
   document.getElementById('logoutBtn').addEventListener('click', () => window.reservoAuth.logout());

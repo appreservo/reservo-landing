@@ -2,7 +2,7 @@
   const data = await loadData();
   renderLayout('Clienti', data);
 
-  const customers = getCustomers(data);
+  const customers = getCustomers(await loadAllBookings());
 
   function render(filter) {
     const f = (filter || '').toLowerCase().trim();

@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Area cliente · Reservo</title>
+<title>Amministrazione · Reservo</title>
 <link rel="icon" href="assets/img/logo.png">
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/css/style.css">
 <style>html.auth-pending body { visibility: hidden; }</style>
 <script type="module">
-  import { requireAuth } from './assets/js/auth.js';
-  requireAuth();
+  import { requireAdmin } from './assets/js/auth.js';
+  requireAdmin();
 </script>
 </head>
 <body>
@@ -18,7 +18,7 @@
   <div class="topbar-brand">
     <img src="assets/img/logo.png" alt="Reservo">
     <span class="topbar-brand-text">
-      <span class="topbar-brand-name">Reservo</span>
+      <span class="topbar-brand-name">Reservo · Admin</span>
       <span class="js-user-name"></span>
     </span>
   </div>
@@ -30,24 +30,21 @@
 
   <div class="card mb-3">
     <div class="card-header">
-      <h2>Cerca attività</h2>
+      <h2>Richieste di registrazione in attesa</h2>
     </div>
-    <div class="field">
-      <input type="text" id="searchInput" placeholder="Cerca per nome, tipo o città…">
-    </div>
-    <div id="businessList" class="grid grid-2"></div>
+    <div id="pendingTable"></div>
   </div>
 
   <div class="card">
     <div class="card-header">
-      <h2>Le mie prenotazioni</h2>
+      <h2>Attività registrate</h2>
     </div>
-    <div id="myBookings" class="grid"></div>
+    <div id="businessTable"></div>
   </div>
 
 </main>
 <script src="assets/js/db.js"></script>
-<script src="assets/js/area.js"></script>
+<script src="assets/js/admin.js"></script>
 <script type="module" src="assets/js/feedback-widget.js"></script>
 </body>
 </html>

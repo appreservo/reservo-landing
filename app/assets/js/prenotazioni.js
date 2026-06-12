@@ -2,6 +2,17 @@
   let data = await loadData();
   renderLayout('Prenotazioni', data);
 
+  const businessUid = window.reservoAuth.auth.currentUser.uid;
+  let liveBookings = await window.reservoAuth.getBusinessBookings(businessUid).catch(() => []);
+
+  function allBookings() {
+    return data.bookings.concat(liveBookings);
+  }
+
+  function findBooking(id) {
+    return data.bookings.find(b => b.id === id) || liveBookings.find(b => b.id === id);
+  }
+
   const now = new Date();
   let viewYear = now.getFullYear();
   let viewMonth = now.getMonth(); // 0-11
@@ -36,7 +47,7 @@
       const dateStr = fmtDate(new Date(viewYear, viewMonth, d));
       const cell = document.createElement('div');
       cell.className = 'calendar-cell' + (dateStr === todayStrV ? ' today' : '');
-      const dayBookings = data.bookings.filter(b => b.date === dateStr && b.status !== 'cancelled' && b.status !== 'rejected');
+      const dayBookings = allBookings().filter(b => b.date === dateStr && b.status !== 'cancelled' && b.status !== 'rejected');
       let pillsHtml = '';
       dayBookings.slice(0, 3).forEach(b => {
         pillsHtml += `<div class="cal-pill ${b.status}">${b.time} ${b.customer_name}</div>`;
@@ -52,7 +63,7 @@
 
   function renderTable() {
     const status = document.getElementById('filterStatus').value;
-    let list = data.bookings.slice();
+    let list = allBookings();
     if (status) list = list.filter(b => b.status === status);
     if (filterDate) list = list.filter(b => b.date === filterDate);
     list.sort((a, b) => (b.date + b.time).localeCompare(a.date + a.time));
@@ -72,7 +83,7 @@
         <td>${b.customer_name}</td>
         <td class="small text-mid">${[b.email, b.phone].filter(Boolean).join('<br>')}</td>
         <td>${b.party_size}</td>
-        <td><span class="badge badge-${b.status}">${statusLabel(b.status)}</span></td>
+        <td><span class="badge badge-${b.status}">${statusLabel(b.status)}</span>${b.businessUid ? ' <span class="badge badge-navy">Sito</span>' : ''}</td>
         <td class="small text-mid">${b.notes || ''}</td>
         <td>
           <div class="flex gap-2">
@@ -89,15 +100,19 @@
       setStatus(btn.dataset.reject, 'rejected');
     }));
     container.querySelectorAll('[data-edit]').forEach(btn => btn.addEventListener('click', () => {
-      openBookingModal(data.bookings.find(b => b.id === btn.dataset.edit));
+      openBookingModal(findBooking(btn.dataset.edit));
     }));
   }
 
-  function setStatus(id, status) {
-    const b = data.bookings.find(x => x.id === id);
+  async function setStatus(id, status) {
+    const b = findBooking(id);
     if (!b) return;
     b.status = status;
-    saveData(data);
+    if (b.businessUid) {
+      await window.reservoAuth.updateBooking(id, { status });
+    } else {
+      saveData(data);
+    }
     showToast(status === 'confirmed' ? 'Prenotazione confermata' : 'Prenotazione rifiutata', status === 'confirmed' ? 'success' : 'error');
     renderAll();
   }
@@ -126,7 +141,7 @@
     bookingModal.classList.add('open');
   }
 
-  bookingForm.addEventListener('submit', (e) => {
+  bookingForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const id = document.getElementById('bookingId').value;
     const payload = {
@@ -140,26 +155,37 @@
       notes: document.getElementById('bNotes').value.trim(),
     };
     if (id) {
-      const b = data.bookings.find(x => x.id === id);
+      const b = findBooking(id);
       Object.assign(b, payload);
+      if (b.businessUid) {
+        await window.reservoAuth.updateBooking(id, payload);
+      } else {
+        saveData(data);
+      }
       showToast('Prenotazione aggiornata', 'success');
     } else {
       payload.id = uid();
       payload.created_at = new Date().toISOString();
       data.bookings.push(payload);
+      saveData(data);
       showToast('Prenotazione creata', 'success');
     }
-    saveData(data);
     bookingModal.classList.remove('open');
     renderAll();
   });
 
-  document.getElementById('deleteBookingBtn').addEventListener('click', () => {
+  document.getElementById('deleteBookingBtn').addEventListener('click', async () => {
     const id = document.getElementById('bookingId').value;
     if (!id) return;
     if (!confirm('Eliminare questa prenotazione?')) return;
-    data.bookings = data.bookings.filter(b => b.id !== id);
-    saveData(data);
+    const b = findBooking(id);
+    if (b && b.businessUid) {
+      await window.reservoAuth.deleteBooking(id);
+      liveBookings = liveBookings.filter(x => x.id !== id);
+    } else {
+      data.bookings = data.bookings.filter(b => b.id !== id);
+      saveData(data);
+    }
     bookingModal.classList.remove('open');
     showToast('Prenotazione eliminata');
     renderAll();
@@ -175,7 +201,7 @@
     currentDayDate = dateStr;
     document.getElementById('dayModalTitle').textContent = fmtDateLong(dateStr);
     const list = document.getElementById('dayModalList');
-    const dayBookings = data.bookings.filter(b => b.date === dateStr).sort((a,b) => a.time.localeCompare(b.time));
+    const dayBookings = allBookings().filter(b => b.date === dateStr).sort((a,b) => a.time.localeCompare(b.time));
     if (dayBookings.length === 0) {
       list.innerHTML = `<p class="text-mid">Nessuna prenotazione per questo giorno.</p>`;
     } else {
@@ -192,7 +218,7 @@
         </div>`).join('');
       list.querySelectorAll('[data-day-edit]').forEach(btn => btn.addEventListener('click', () => {
         dayModal.classList.remove('open');
-        openBookingModal(data.bookings.find(b => b.id === btn.dataset.dayEdit));
+        openBookingModal(findBooking(btn.dataset.dayEdit));
       }));
     }
     dayModal.classList.add('open');

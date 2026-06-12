@@ -150,6 +150,7 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); bo
 
 .text-mid { color: var(--text-mid); }
 .mt-3 { margin-top: .9rem; }
+.hidden { display: none !important; }
 
 /* TOAST */
 .toast {
@@ -162,9 +163,20 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); bo
 .toast.success { background: #16a34a; }
 .toast.error { background: #dc2626; }
 
+.nav-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.4);
+  z-index: 45;
+  opacity: 0;
+  transition: opacity .25s ease;
+}
+
 @media (max-width: 720px) {
-  .site-nav { position: fixed; top: 60px; left: 0; right: 0; background: var(--primary); flex-direction: column; padding: 1rem; gap: 1rem; transform: translateY(-150%); transition: transform .2s; }
+  .site-nav { position: fixed; top: 60px; left: 0; right: 0; background: var(--primary); flex-direction: column; padding: 1rem; gap: 1rem; transform: translateY(-150%); transition: transform .2s; z-index: 50; }
   .site-nav.open { transform: translateY(0); }
   .nav-burger { display: block; }
   .field-row { flex-direction: column; gap: 0; }
+  .nav-overlay.open { display: block; opacity: 1; }
 }

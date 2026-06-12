@@ -10,12 +10,13 @@
   const weekStartStr = fmtDate(weekStart);
   const weekEndStr = fmtDate(addDays(weekStart, 6));
 
-  const bookings = data.bookings.slice().sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
+  const allBookings = await loadAllBookings();
+  const bookings = allBookings.slice().sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
 
   const todayCount = bookings.filter(b => b.date === today && b.status !== 'rejected' && b.status !== 'cancelled').length;
   const pending = bookings.filter(b => b.status === 'pending');
   const weekCount = bookings.filter(b => b.date >= weekStartStr && b.date <= weekEndStr && b.status !== 'rejected' && b.status !== 'cancelled').length;
-  const customers = getCustomers(data);
+  const customers = getCustomers(allBookings);
 
   document.getElementById('statToday').textContent = todayCount;
   document.getElementById('statPending').textContent = pending.length;

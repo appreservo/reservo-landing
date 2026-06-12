@@ -1,6 +1,7 @@
 (async function () {
   const data = await loadData();
   renderLayout('Statistiche', data);
+  const bookings = await loadAllBookings();
 
   const NAVY = '#1B2F6E', GOLD = '#C9A227', GREEN = '#16a34a', ORANGE = '#d97706', RED = '#dc2626', GRAY = '#9ca3af';
 
@@ -16,7 +17,7 @@
     for (let i = days - 1; i >= 0; i--) {
       const d = fmtDate(addDays(today, -i));
       labels.push(fmtDateShort(d));
-      counts.push(data.bookings.filter(b => b.date === d && b.status !== 'rejected' && b.status !== 'cancelled').length);
+      counts.push(bookings.filter(b => b.date === d && b.status !== 'rejected' && b.status !== 'cancelled').length);
     }
 
     if (trendChart) trendChart.destroy();
@@ -36,7 +37,7 @@
     });
 
     // ----- status distribution (doughnut) -----
-    const periodBookings = data.bookings.filter(b => b.date >= fromDate && b.date <= fmtDate(today));
+    const periodBookings = bookings.filter(b => b.date >= fromDate && b.date <= fmtDate(today));
     const statusCounts = { confirmed: 0, pending: 0, rejected: 0, cancelled: 0 };
     periodBookings.forEach(b => { if (statusCounts[b.status] !== undefined) statusCounts[b.status]++; });
 

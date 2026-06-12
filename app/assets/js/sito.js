@@ -1,5 +1,27 @@
-(function () {
-  const data = loadData();
+import { getBusinessBySlug, getPublicBusinessData, createPublicBooking, getBusinessBookingsForDate, whoAmI } from './auth.js';
+
+(async function () {
+  const slug = new URLSearchParams(location.search).get('b');
+  const isPublicMode = !!slug;
+  let data;
+  let business = null;
+
+  if (isPublicMode) {
+    business = await getBusinessBySlug(slug);
+    data = business && await getPublicBusinessData(business.id);
+    if (!data) {
+      document.body.innerHTML = `<div class="demo-banner">Attività non trovata.</div>`;
+      return;
+    }
+    document.querySelector('.demo-banner').remove();
+    // ricerca prenotazioni per contatto: richiede dati privati non disponibili sul sito pubblico,
+    // usare "Le mie prenotazioni" nell'area cliente per gli utenti registrati
+    document.getElementById('cerca').classList.add('hidden');
+    document.querySelector('a[href="#cerca"]').classList.add('hidden');
+  } else {
+    data = await loadData();
+  }
+
   const p = data.profile;
 
   // ---------- header / hero / footer ----------
@@ -34,11 +56,25 @@
   badge.className = 'status-badge ' + (isOpen ? 'status-open' : 'status-closed');
 
   // ---------- mobile nav ----------
+  let navOverlay = document.getElementById('navOverlay');
+  if (!navOverlay) {
+    navOverlay = document.createElement('div');
+    navOverlay.id = 'navOverlay';
+    navOverlay.className = 'nav-overlay';
+    document.body.appendChild(navOverlay);
+  }
+
+  function setNavOpen(open) {
+    document.getElementById('siteNav').classList.toggle('open', open);
+    navOverlay.classList.toggle('open', open);
+  }
+
   document.getElementById('navBurger').addEventListener('click', () => {
-    document.getElementById('siteNav').classList.toggle('open');
+    setNavOpen(!document.getElementById('siteNav').classList.contains('open'));
   });
+  navOverlay.addEventListener('click', () => setNavOpen(false));
   document.querySelectorAll('.site-nav a').forEach(a => a.addEventListener('click', () => {
-    document.getElementById('siteNav').classList.remove('open');
+    setNavOpen(false);
   }));
 
   // ---------- menu ----------
@@ -135,7 +171,7 @@
   });
 
   // --- step 2: data + slot ---
-  function getAvailableSlots(dateStr) {
+  async function getAvailableSlots(dateStr) {
     const service = (data.services || []).find(s => s.id === bookingState.serviceId);
     if (!service) return [];
 
@@ -158,7 +194,11 @@
     const suitableTables = (data.tables || []).filter(t => t.capacity >= bookingState.partySize);
     if (suitableTables.length === 0) return [];
 
-    const existing = data.bookings.filter(b => b.date === dateStr && (b.status === 'confirmed' || b.status === 'pending'));
+    let existing = data.bookings.filter(b => b.date === dateStr && (b.status === 'confirmed' || b.status === 'pending'));
+    if (isPublicMode) {
+      const liveBookings = await getBusinessBookingsForDate(business.id, dateStr);
+      existing = existing.concat(liveBookings);
+    }
 
     const slots = [];
     for (let t = openMin; t + duration <= closeMin; t += duration) {
@@ -174,7 +214,7 @@
     return slots;
   }
 
-  function renderSlots() {
+  async function renderSlots() {
     const grid = document.getElementById('slotGrid');
     const msg = document.getElementById('slotMessage');
     bookingState.time = '';
@@ -184,7 +224,7 @@
     bookingState.date = dateStr;
     if (!dateStr) { grid.innerHTML = ''; msg.textContent = ''; return; }
 
-    const slots = getAvailableSlots(dateStr);
+    const slots = await getAvailableSlots(dateStr);
     if (slots.length === 0) {
       grid.innerHTML = '';
       msg.textContent = 'Nessun orario disponibile per la data scelta. Prova con un altro giorno.';
@@ -224,12 +264,12 @@
   // --- generate booking reference ---
   function generateBookingReference() {
     const today = todayStr().replace(/-/g, '');
-    const count = data.bookings.filter(b => (b.created_at || '').slice(0, 10) === todayStr()).length + 1;
-    return `RZ-${today}-${String(count).padStart(4, '0')}`;
+    const rand = Math.floor(Math.random() * 10000);
+    return `RZ-${today}-${String(rand).padStart(4, '0')}`;
   }
 
   // --- step 4: submit ---
-  bookingForm.addEventListener('submit', (e) => {
+  bookingForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const service = (data.services || []).find(s => s.id === bookingState.serviceId);
     const booking = {
@@ -247,8 +287,20 @@
       status: p.booking_mode === 'auto' ? 'confirmed' : 'pending',
       created_at: new Date().toISOString(),
     };
-    data.bookings.push(booking);
-    saveData(data);
+
+    if (isPublicMode) {
+      const user = await whoAmI();
+      await createPublicBooking({
+        ...booking,
+        businessUid: business.id,
+        businessName: p.business_name,
+        businessSlug: p.slug,
+        customerUid: user ? user.uid : null,
+      });
+    } else {
+      data.bookings.push(booking);
+      saveData(data);
+    }
 
     const confirmedMsg = `<div class="alert alert-success">Prenotazione confermata! Riceverai una email di conferma a ${booking.email}.</div>`;
     const pendingMsg = `<div class="alert alert-info">Richiesta inviata! Il gestore confermerà la tua prenotazione a breve via email.</div>`;
@@ -319,14 +371,14 @@
       return;
     }
     container.innerHTML = upcoming.map(ev => {
-      const taken = (ev.registrations || []).reduce((s,r) => s + (r.people || 1), 0);
+      const taken = ev.taken !== undefined ? ev.taken : (ev.registrations || []).reduce((s,r) => s + (r.people || 1), 0);
       const left = ev.max_participants - taken;
       return `<div class="event-card">
         <h3>${ev.title}</h3>
         <div class="meta">${fmtDateLong(ev.date)} — ore ${ev.time}${ev.location ? ' · ' + ev.location : ''}</div>
         <div class="desc">${ev.description || ''}</div>
         <div class="spots">${left > 0 ? left + ' posti disponibili su ' + ev.max_participants : 'Posti esauriti'}</div>
-        ${left > 0 ? `<button class="btn btn-gold" data-join="${ev.id}" style="width:auto; padding:.5rem 1.2rem; font-size:.85rem">Iscriviti</button>
+        ${(left > 0 && !isPublicMode) ? `<button class="btn btn-gold" data-join="${ev.id}" style="width:auto; padding:.5rem 1.2rem; font-size:.85rem">Iscriviti</button>
         <div class="join-form" id="join-${ev.id}" style="display:none; margin-top:1rem">
           <div class="field-row">
             <div><label>Nome</label><input type="text" id="jn-${ev.id}"></div>

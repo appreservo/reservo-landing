@@ -187,12 +187,12 @@
     if (!confirm('Ripristinare i dati di esempio originali? Tutte le modifiche andranno perse.')) return;
     await resetDemoData();
     showToast('Dati di esempio ripristinati', 'success');
-    setTimeout(() => location.reload(), 600);
+    setTimeout(() => location.reload(), 1200);
   });
   document.getElementById('clearAllBtn').addEventListener('click', async () => {
     if (!confirm('Cancellare TUTTI i dati (menu, prenotazioni, eventi)? Questa azione non può essere annullata.')) return;
     await clearAllData();
     showToast('Dati cancellati');
-    setTimeout(() => location.reload(), 600);
+    setTimeout(() => location.reload(), 1200);
   });
 })();

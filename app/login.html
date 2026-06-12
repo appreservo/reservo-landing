@@ -103,13 +103,13 @@
 
 <script src="assets/js/db.js"></script>
 <script type="module">
-  import { auth, login, register, resetPassword, createUserProfile, getUserProfile, upsertBusinessDirectory, serverTimestamp } from './assets/js/auth.js';
+  import { auth, login, register, resetPassword, createUserProfile, getUserProfile, upsertBusinessDirectory, homeForProfile, serverTimestamp } from './assets/js/auth.js';
   import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
 
   onAuthStateChanged(auth, async (user) => {
     if (user) {
       const profile = await getUserProfile(user.uid).catch(() => null);
-      location.href = (profile && profile.role === 'cliente') ? 'area.html' : 'index.html';
+      location.href = homeForProfile(profile);
     }
   });
 
@@ -140,7 +140,7 @@
     try {
       const cred = await login(email, password);
       const profile = await getUserProfile(cred.user.uid).catch(() => null);
-      location.href = (profile && profile.role === 'cliente') ? 'area.html' : 'index.html';
+      location.href = homeForProfile(profile);
     } catch (err) {
       errorEl.textContent = errorMessages[err.code] || 'Accesso non riuscito. Riprova.';
       errorEl.classList.add('show');
@@ -241,6 +241,7 @@
       if (selectedRole === 'gestore') {
         userProfile.businessName = businessName;
         userProfile.businessType = businessType;
+        userProfile.status = 'pending';
       }
       await createUserProfile(uid, userProfile);
 
@@ -249,13 +250,15 @@
         await upsertBusinessDirectory(uid, {
           business_name: businessName, type: businessType, slug,
           description: '', address: '', phone: '', email,
+          status: 'pending',
         });
         const seed = defaultData();
         seed.profile.business_name = businessName;
         seed.profile.type = businessType;
         seed.profile.slug = slug;
         await window.reservoAuth.saveBusinessData(uid, seed);
-        location.href = 'index.html';
+        await window.reservoAuth.savePublicBusinessData(uid, buildPublicData(seed));
+        location.href = 'pending.html';
       } else {
         location.href = 'area.html';
       }
