@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Clienti · Reservo</title>
+<title>Tavoli · Reservo</title>
 <link rel="icon" href="assets/img/logo.png">
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/css/style.css">
@@ -20,35 +20,32 @@
     <header class="topbar" id="topbar"></header>
     <main class="content">
 
-      <div class="card">
+      <div class="card mb-3">
         <div class="card-header">
-          <h2>Clienti</h2>
-          <div class="flex gap-2">
-            <input type="search" id="searchInput" placeholder="Cerca per nome, email o telefono..." style="width:280px">
-            <button class="btn btn-outline btn-sm" id="exportCsvBtn">Esporta CSV</button>
+          <h2>Vista tavoli</h2>
+          <div class="flex gap-2 items-center">
+            <button class="btn btn-outline btn-sm" id="prevDay">‹</button>
+            <input type="date" id="tableDate">
+            <button class="btn btn-outline btn-sm" id="nextDay">›</button>
           </div>
         </div>
-        <div id="customersTable"></div>
+        <p class="text-mid small">Prenotazioni del giorno selezionato, raggruppate per tavolo. Le prenotazioni senza tavolo assegnato sono mostrate separatamente.</p>
+      </div>
+
+      <div class="grid grid-3 mb-3" id="tablesGrid"></div>
+
+      <div class="card">
+        <div class="card-header"><h2>Senza tavolo assegnato</h2></div>
+        <div id="unassignedList"></div>
       </div>
 
     </main>
   </div>
 </div>
 
-<!-- Modal storico cliente -->
-<div class="modal-overlay" id="customerModal">
-  <div class="modal">
-    <h3 id="customerModalTitle">Cliente</h3>
-    <div id="customerModalBody"></div>
-    <div class="modal-actions">
-      <button type="button" class="btn btn-outline" data-close>Chiudi</button>
-    </div>
-  </div>
-</div>
-
 <script src="assets/js/db.js"></script>
 <script src="assets/js/layout.js"></script>
-<script src="assets/js/clienti.js"></script>
+<script src="assets/js/tavoli.js"></script>
 <script type="module" src="assets/js/feedback-widget.js"></script>
 </body>
 </html>

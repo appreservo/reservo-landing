@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="it" class="auth-pending">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Comunicazioni · Reservo</title>
+<link rel="icon" href="assets/img/logo.png">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+<style>html.auth-pending body { visibility: hidden; }</style>
+<script type="module">
+  import { requireAuth } from './assets/js/auth.js';
+  requireAuth();
+</script>
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="main">
+    <header class="topbar" id="topbar"></header>
+    <main class="content">
+
+      <div class="card mb-3">
+        <div class="card-header"><h2>Nuova comunicazione</h2></div>
+        <p class="text-mid small">Invia un messaggio via email a tutti i clienti che hanno effettuato almeno una prenotazione presso la tua attività. L'invio viene elaborato in background entro pochi minuti.</p>
+        <form id="broadcastForm">
+          <div class="field"><label>Oggetto</label><input type="text" id="bSubject" required placeholder="Es. Novità nel nostro menù"></div>
+          <div class="field"><label>Messaggio</label><textarea id="bMessage" rows="6" required placeholder="Scrivi qui il messaggio da inviare ai tuoi clienti..."></textarea></div>
+          <div class="modal-actions">
+            <button type="submit" class="btn btn-primary">Invia a tutti i clienti</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><h2>Comunicazioni inviate</h2></div>
+        <div id="broadcastsList"></div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<script src="assets/js/db.js"></script>
+<script src="assets/js/layout.js"></script>
+<script type="module" src="assets/js/comunicazioni.js"></script>
+<script type="module" src="assets/js/feedback-widget.js"></script>
+</body>
+</html>

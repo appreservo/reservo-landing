@@ -1,4 +1,4 @@
-import { getBusinessBySlug, getPublicBusinessData, createPublicBooking, getBusinessBookingsForDate, whoAmI } from './auth.js';
+import { getBusinessBySlug, getPublicBusinessData, createPublicBooking, getBusinessBookingsForDate, getApprovedReviews, whoAmI } from './auth.js';
 
 (async function () {
   const slug = new URLSearchParams(location.search).get('b');
@@ -23,6 +23,11 @@ import { getBusinessBySlug, getPublicBusinessData, createPublicBooking, getBusin
   }
 
   const p = data.profile;
+  let businessUid = business ? business.id : null;
+  if (!businessUid) {
+    const user = await whoAmI();
+    businessUid = user ? user.uid : null;
+  }
 
   // ---------- header / hero / footer ----------
   document.getElementById('brandName').textContent = p.business_name;
@@ -114,7 +119,7 @@ import { getBusinessBySlug, getPublicBusinessData, createPublicBooking, getBusin
   const BOOKING_ADVANCE_DAYS = 30;
 
   const bookingForm = document.getElementById('bookingForm');
-  const bookingState = { step: 1, serviceId: null, partySize: 2, date: '', time: '' };
+  const bookingState = { step: 1, serviceId: null, partySize: 2, date: '', time: '', coupon: null };
 
   function goToStep(step) {
     bookingState.step = step;
@@ -256,6 +261,32 @@ import { getBusinessBySlug, getPublicBusinessData, createPublicBooking, getBusin
     `;
   }
 
+  // --- coupon ---
+  function couponDiscountLabel(coupon) {
+    return coupon.type === 'percent' ? `-${coupon.value}%` : `-${euro(coupon.value)}`;
+  }
+
+  document.getElementById('couponBtn').addEventListener('click', () => {
+    const code = document.getElementById('cCoupon').value.trim().toUpperCase();
+    const msg = document.getElementById('couponMessage');
+    if (!code) { msg.textContent = ''; msg.className = 'small'; bookingState.coupon = null; return; }
+    const coupon = (data.coupons || []).find(c => (c.code || '').toUpperCase() === code);
+    const today = todayStr();
+    const valid = coupon && coupon.active !== false
+      && (!coupon.valid_from || coupon.valid_from <= today)
+      && (!coupon.valid_to || coupon.valid_to >= today)
+      && (!coupon.max_uses || (coupon.used_count || 0) < coupon.max_uses);
+    if (!valid) {
+      bookingState.coupon = null;
+      msg.textContent = 'Codice non valido o scaduto.';
+      msg.className = 'small error';
+      return;
+    }
+    bookingState.coupon = coupon;
+    msg.textContent = `Codice applicato: sconto ${couponDiscountLabel(coupon)}.`;
+    msg.className = 'small ok';
+  });
+
   // --- back buttons ---
   bookingForm.querySelectorAll('[data-prev]').forEach(btn => btn.addEventListener('click', () => {
     goToStep(Number(btn.dataset.prev));
@@ -287,6 +318,10 @@ import { getBusinessBySlug, getPublicBusinessData, createPublicBooking, getBusin
       status: p.booking_mode === 'auto' ? 'confirmed' : 'pending',
       created_at: new Date().toISOString(),
     };
+    if (bookingState.coupon) {
+      booking.coupon_code = bookingState.coupon.code;
+      booking.coupon_discount = couponDiscountLabel(bookingState.coupon);
+    }
 
     if (isPublicMode) {
       const user = await whoAmI();
@@ -312,6 +347,7 @@ import { getBusinessBySlug, getPublicBusinessData, createPublicBooking, getBusin
         <div><strong>${booking.service_name}</strong> · ${booking.party_size} ${booking.party_size === 1 ? 'persona' : 'persone'}</div>
         <div>${fmtDateLong(booking.date)} — ore ${booking.time}</div>
         <div>${booking.customer_name}</div>
+        ${booking.coupon_code ? `<div>Coupon ${booking.coupon_code} applicato (${booking.coupon_discount})</div>` : ''}
       </div>
       <p class="text-mid small">Conserva il codice prenotazione: ti servirà per cercarla nella sezione "Le mie prenotazioni".</p>
     `;
@@ -321,9 +357,12 @@ import { getBusinessBySlug, getPublicBusinessData, createPublicBooking, getBusin
   document.getElementById('newBookingBtn').addEventListener('click', () => {
     bookingForm.reset();
     document.getElementById('cParty').value = 2;
+    document.getElementById('couponMessage').textContent = '';
+    document.getElementById('couponMessage').className = 'small';
     bookingState.serviceId = null;
     bookingState.date = '';
     bookingState.time = '';
+    bookingState.coupon = null;
     document.getElementById('slotGrid').innerHTML = '';
     document.getElementById('slotMessage').textContent = '';
     document.querySelectorAll('#serviceCards .service-card').forEach(c => c.classList.remove('selected'));
@@ -373,12 +412,14 @@ import { getBusinessBySlug, getPublicBusinessData, createPublicBooking, getBusin
     container.innerHTML = upcoming.map(ev => {
       const taken = ev.taken !== undefined ? ev.taken : (ev.registrations || []).reduce((s,r) => s + (r.people || 1), 0);
       const left = ev.max_participants - taken;
+      const full = left <= 0;
+      const waitlistCount = (ev.waitlist || []).length;
       return `<div class="event-card">
         <h3>${ev.title}</h3>
         <div class="meta">${fmtDateLong(ev.date)} — ore ${ev.time}${ev.location ? ' · ' + ev.location : ''}</div>
         <div class="desc">${ev.description || ''}</div>
-        <div class="spots">${left > 0 ? left + ' posti disponibili su ' + ev.max_participants : 'Posti esauriti'}</div>
-        ${(left > 0 && !isPublicMode) ? `<button class="btn btn-gold" data-join="${ev.id}" style="width:auto; padding:.5rem 1.2rem; font-size:.85rem">Iscriviti</button>
+        <div class="spots">${!full ? left + ' posti disponibili su ' + ev.max_participants : 'Posti esauriti' + (waitlistCount ? ` · ${waitlistCount} in lista d'attesa` : '')}</div>
+        ${!isPublicMode ? `<button class="btn btn-gold" data-join="${ev.id}" style="width:auto; padding:.5rem 1.2rem; font-size:.85rem">${full ? "Iscriviti in lista d'attesa" : 'Iscriviti'}</button>
         <div class="join-form" id="join-${ev.id}" style="display:none; margin-top:1rem">
           <div class="field-row">
             <div><label>Nome</label><input type="text" id="jn-${ev.id}"></div>
@@ -388,7 +429,7 @@ import { getBusinessBySlug, getPublicBusinessData, createPublicBooking, getBusin
             <div><label>Email</label><input type="email" id="je-${ev.id}"></div>
             <div><label>Telefono</label><input type="text" id="jt-${ev.id}"></div>
           </div>
-          <button class="btn btn-gold" data-confirm-join="${ev.id}">Conferma iscrizione</button>
+          <button class="btn btn-gold" data-confirm-join="${ev.id}" data-waitlist="${full}">${full ? "Conferma iscrizione in lista d'attesa" : 'Conferma iscrizione'}</button>
         </div>` : ''}
       </div>`;
     }).join('');
@@ -401,21 +442,60 @@ import { getBusinessBySlug, getPublicBusinessData, createPublicBooking, getBusin
       const ev = data.events.find(e => e.id === id);
       const name = document.getElementById('jn-' + id).value.trim();
       if (!name) { showToast('Inserisci il tuo nome', 'error'); return; }
-      ev.registrations = ev.registrations || [];
-      ev.registrations.push({
+      const entry = {
         id: uid(),
         name,
         email: document.getElementById('je-' + id).value.trim(),
         phone: document.getElementById('jt-' + id).value.trim(),
         people: parseInt(document.getElementById('jp-' + id).value, 10) || 1,
         created_at: new Date().toISOString(),
-      });
+      };
+      if (btn.dataset.waitlist === 'true') {
+        ev.waitlist = ev.waitlist || [];
+        ev.waitlist.push(entry);
+        showToast("Iscrizione in lista d'attesa registrata, ti contatteremo se si libera un posto.", 'success');
+      } else {
+        ev.registrations = ev.registrations || [];
+        ev.registrations.push(entry);
+        showToast('Iscrizione registrata, a presto!', 'success');
+      }
       saveData(data);
-      showToast('Iscrizione registrata, a presto!', 'success');
       renderEvents();
     }));
   }
   renderEvents();
+
+  // ---------- recensioni ----------
+  async function renderReviews() {
+    const container = document.getElementById('reviewsContainer');
+    if (!businessUid) { container.innerHTML = ''; return; }
+    let reviews = [];
+    try {
+      reviews = await getApprovedReviews(businessUid);
+    } catch (e) {}
+    if (reviews.length === 0) {
+      container.innerHTML = `<p class="text-mid" style="text-align:center">Nessuna recensione pubblicata al momento.</p>`;
+      return;
+    }
+    reviews.sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
+    const avg = reviews.reduce((s, r) => s + (r.rating || 0), 0) / reviews.length;
+    container.innerHTML = `
+      <div class="review-summary">
+        <div class="score">${avg.toFixed(1)}</div>
+        ${starsHtml(avg)}
+        <div class="text-mid small">${reviews.length} recensioni</div>
+      </div>` +
+      reviews.map(r => `
+        <div class="review-card">
+          <div class="review-head">
+            <span class="review-author">${r.customer_name || 'Cliente'}</span>
+            ${starsHtml(r.rating)}
+          </div>
+          <div class="review-date">${r.created_at ? fmtDateLong(r.created_at.slice(0, 10)) : ''}</div>
+          ${r.comment ? `<div class="review-comment">${r.comment}</div>` : ''}
+        </div>`).join('');
+  }
+  renderReviews();
 
   // ---------- footer hours ----------
   document.getElementById('hoursTable').innerHTML = data.hours.map(h =>

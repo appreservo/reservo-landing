@@ -40,6 +40,7 @@
               <option value="rejected">Rifiutate</option>
               <option value="cancelled">Annullate</option>
             </select>
+            <button class="btn btn-outline btn-sm" id="exportCsvBtn">Esporta CSV</button>
             <button class="btn btn-primary btn-sm" id="newBookingBtn">+ Nuova prenotazione</button>
           </div>
         </div>
@@ -68,14 +69,22 @@
         <div class="field"><label>Data</label><input type="date" id="bDate" required></div>
         <div class="field"><label>Ora</label><input type="time" id="bTime" required></div>
       </div>
-      <div class="field">
-        <label>Stato</label>
-        <select id="bStatus">
-          <option value="pending">In attesa</option>
-          <option value="confirmed">Confermata</option>
-          <option value="rejected">Rifiutata</option>
-          <option value="cancelled">Annullata</option>
-        </select>
+      <div class="field-row">
+        <div class="field">
+          <label>Stato</label>
+          <select id="bStatus">
+            <option value="pending">In attesa</option>
+            <option value="confirmed">Confermata</option>
+            <option value="rejected">Rifiutata</option>
+            <option value="cancelled">Annullata</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Tavolo</label>
+          <select id="bTable">
+            <option value="">— Nessuno —</option>
+          </select>
+        </div>
       </div>
       <div class="field"><label>Note</label><textarea id="bNotes" rows="2"></textarea></div>
       <div class="modal-actions">

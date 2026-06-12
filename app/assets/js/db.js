@@ -53,7 +53,11 @@ function defaultData() {
       description: 'Cucina tradizionale italiana nel cuore di Milano. Ingredienti freschi, ricette di famiglia, atmosfera accogliente.',
       booking_mode: 'manual',
       notification_emails: 'info@damario.it',
+      loyalty_points_per_booking: 10,
     },
+    coupons: [
+      { id: uid(), code: 'BENVENUTO10', type: 'percent', value: 10, valid_from: '', valid_to: '', max_uses: 0, used_count: 0, active: true },
+    ],
     hours: [
       { day: 0, open: '12:00', close: '22:30', closed: false },
       { day: 1, open: '12:00', close: '22:30', closed: false },
@@ -102,6 +106,7 @@ function defaultData() {
         registrations: [
           { id: uid(), name: 'Anna Ferrari', email: 'anna.ferrari@example.com', phone: '333 1112222', people: 2, created_at: new Date().toISOString() },
         ],
+        waitlist: [],
       },
     ],
     bookings: (() => {
@@ -163,6 +168,9 @@ function buildPublicData(data) {
     bookings: (data.bookings || [])
       .filter(b => b.status === 'confirmed' || b.status === 'pending')
       .map(b => ({ date: b.date, time: b.time, status: b.status })),
+    coupons: (data.coupons || [])
+      .filter(c => c.active && (!c.valid_to || c.valid_to >= todayStr()))
+      .map(c => ({ code: c.code, type: c.type, value: c.value, valid_from: c.valid_from, valid_to: c.valid_to, max_uses: c.max_uses, used_count: c.used_count })),
   };
 }
 
@@ -242,6 +250,34 @@ function getCustomers(bookings) {
     map.get(key).bookings.push(b);
   });
   return Array.from(map.values()).sort((a, b) => b.bookings.length - a.bookings.length);
+}
+
+/* esporta un array di oggetti come file CSV scaricabile */
+function exportCSV(filename, rows, columns) {
+  const escape = (v) => {
+    const s = v === null || v === undefined ? '' : String(v);
+    return /[",\n;]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  };
+  const header = columns.map(c => escape(c.label)).join(';');
+  const lines = rows.map(row => columns.map(c => escape(typeof c.value === 'function' ? c.value(row) : row[c.value])).join(';'));
+  const csv = '﻿' + [header, ...lines].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+/* render di stelle (rating 1-5), readOnly=true per visualizzazione */
+function starsHtml(rating, readOnly = true, name = 'rating') {
+  const r = Math.round(rating || 0);
+  if (readOnly) {
+    return `<span class="stars">${[1,2,3,4,5].map(i => `<span class="star ${i <= r ? 'filled' : ''}">★</span>`).join('')}</span>`;
+  }
+  return `<span class="stars stars-input" data-name="${name}">${[1,2,3,4,5].map(i =>
+    `<span class="star ${i <= r ? 'filled' : ''}" data-value="${i}">★</span>`).join('')}</span>`;
 }
 
 /* toast helper */

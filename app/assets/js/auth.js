@@ -113,6 +113,55 @@ async function listAllBusinesses() {
   return snap.docs.map(d => ({ id: d.id, ...d.data() }));
 }
 
+/* recensioni (collezione top-level 'reviews') */
+function createReview(review) {
+  return addDoc(collection(db, 'reviews'), review);
+}
+
+async function getBusinessReviews(businessUid) {
+  const snap = await getDocs(query(collection(db, 'reviews'), where('businessUid', '==', businessUid)));
+  return snap.docs.map(d => ({ ...d.data(), id: d.id }));
+}
+
+async function getApprovedReviews(businessUid) {
+  const snap = await getDocs(query(collection(db, 'reviews'), where('businessUid', '==', businessUid), where('status', '==', 'approved')));
+  return snap.docs.map(d => ({ ...d.data(), id: d.id }));
+}
+
+async function getCustomerReviews(customerUid) {
+  const snap = await getDocs(query(collection(db, 'reviews'), where('customerUid', '==', customerUid)));
+  return snap.docs.map(d => ({ ...d.data(), id: d.id }));
+}
+
+function updateReviewStatus(reviewId, status) {
+  return setDoc(doc(db, 'reviews', reviewId), { status }, { merge: true });
+}
+
+function deleteReview(reviewId) {
+  return deleteDoc(doc(db, 'reviews', reviewId));
+}
+
+/* comunicazioni broadcast (collezione top-level 'broadcasts', elaborate da una Cloud Function) */
+function createBroadcast(broadcast) {
+  return addDoc(collection(db, 'broadcasts'), { ...broadcast, created_at: serverTimestamp(), status: 'pending' });
+}
+
+async function getBusinessBroadcasts(businessUid) {
+  const snap = await getDocs(query(collection(db, 'broadcasts'), where('businessUid', '==', businessUid)));
+  return snap.docs.map(d => ({ ...d.data(), id: d.id }));
+}
+
+/* statistiche piattaforma per il pannello admin */
+async function listGestoreUsers() {
+  const snap = await getDocs(query(collection(db, 'users'), where('role', '==', 'gestore')));
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+
+async function countAllBookings() {
+  const snap = await getDocs(collection(db, 'bookings'));
+  return snap.size;
+}
+
 async function listBusinesses() {
   const list = await listAllBusinesses();
   return list.filter(b => !b.status || b.status === 'active');
@@ -146,7 +195,7 @@ function homeForProfile(profile) {
   return 'index.html';
 }
 
-const GESTIONALE_PAGES = ['index.html', 'prenotazioni.html', 'clienti.html', 'statistiche.html', 'menu.html', 'eventi.html', 'impostazioni.html'];
+const GESTIONALE_PAGES = ['index.html', 'prenotazioni.html', 'clienti.html', 'statistiche.html', 'menu.html', 'eventi.html', 'impostazioni.html', 'recensioni.html', 'tavoli.html', 'comunicazioni.html'];
 
 function requireAuth() {
   return new Promise((resolve) => {
@@ -197,6 +246,8 @@ window.reservoAuth = {
   createPublicBooking, getCustomerBookings, getBusinessBookingsForDate, getBusinessBookings,
   updateBookingStatus, updateBooking, deleteBooking, whoAmI,
   homeForProfile, listPendingAccounts, approveAccount, rejectAccount,
+  createReview, getBusinessReviews, getApprovedReviews, getCustomerReviews, updateReviewStatus, deleteReview,
+  createBroadcast, getBusinessBroadcasts, listGestoreUsers, countAllBookings,
   serverTimestamp,
 };
 export {
@@ -206,5 +257,7 @@ export {
   createPublicBooking, getCustomerBookings, getBusinessBookingsForDate, getBusinessBookings,
   updateBookingStatus, updateBooking, deleteBooking, whoAmI,
   homeForProfile, listPendingAccounts, approveAccount, rejectAccount,
+  createReview, getBusinessReviews, getApprovedReviews, getCustomerReviews, updateReviewStatus, deleteReview,
+  createBroadcast, getBusinessBroadcasts, listGestoreUsers, countAllBookings,
   serverTimestamp,
 };

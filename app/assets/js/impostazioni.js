@@ -15,7 +15,7 @@
     history.replaceState(null, '', '#' + t.dataset.tab);
   }));
   const initialTab = location.hash ? location.hash.slice(1) : 'profilo';
-  activateTab(['profilo','orari','servizi','staff','postazioni','dati'].includes(initialTab) ? initialTab : 'profilo');
+  activateTab(['profilo','orari','servizi','staff','postazioni','coupon','fedelta','dati'].includes(initialTab) ? initialTab : 'profilo');
 
   // ---------- profilo ----------
   const p = data.profile;
@@ -180,6 +180,66 @@
     ],
     addBtn: document.getElementById('addTableBtn'),
     defaultItem: { name: 'Nuova postazione', capacity: 2 },
+  });
+
+  // ---------- coupon ----------
+  data.coupons = data.coupons || [];
+
+  function renderCoupons() {
+    const body = document.getElementById('couponsBody');
+    if (data.coupons.length === 0) {
+      body.innerHTML = `<tr><td colspan="8" class="text-mid small">Nessun coupon creato.</td></tr>`;
+      return;
+    }
+    body.innerHTML = data.coupons.map((c, i) => `
+      <tr>
+        <td><input type="text" data-c-field="code" data-i="${i}" value="${c.code || ''}" style="min-width:120px; text-transform:uppercase"></td>
+        <td>
+          <select data-c-field="type" data-i="${i}">
+            <option value="percent" ${c.type === 'percent' ? 'selected' : ''}>Percentuale</option>
+            <option value="fixed" ${c.type === 'fixed' ? 'selected' : ''}>Importo fisso (€)</option>
+          </select>
+        </td>
+        <td><input type="number" data-c-field="value" data-i="${i}" value="${c.value ?? 0}" min="0" step="0.5" style="width:80px"></td>
+        <td><input type="date" data-c-field="valid_to" data-i="${i}" value="${c.valid_to || ''}"></td>
+        <td><input type="number" data-c-field="max_uses" data-i="${i}" value="${c.max_uses ?? 0}" min="0" style="width:80px" title="0 = illimitati"></td>
+        <td class="small text-mid">${c.used_count || 0}</td>
+        <td><input type="checkbox" data-c-field="active" data-i="${i}" ${c.active ? 'checked' : ''} style="width:auto"></td>
+        <td><button class="btn btn-danger btn-sm" data-c-remove="${i}">Rimuovi</button></td>
+      </tr>`).join('');
+
+    body.querySelectorAll('[data-c-field]').forEach(inp => inp.addEventListener('change', () => {
+      const i = parseInt(inp.dataset.i, 10);
+      const field = inp.dataset.cField;
+      const c = data.coupons[i];
+      if (field === 'active') c[field] = inp.checked;
+      else if (field === 'value' || field === 'max_uses') c[field] = parseFloat(inp.value) || 0;
+      else if (field === 'code') c[field] = inp.value.trim().toUpperCase();
+      else c[field] = inp.value;
+      saveData(data);
+      showToast('Salvato', 'success');
+    }));
+    body.querySelectorAll('[data-c-remove]').forEach(btn => btn.addEventListener('click', () => {
+      data.coupons.splice(parseInt(btn.dataset.cRemove, 10), 1);
+      saveData(data);
+      renderCoupons();
+      showToast('Coupon rimosso');
+    }));
+  }
+  renderCoupons();
+
+  document.getElementById('addCouponBtn').addEventListener('click', () => {
+    data.coupons.push({ id: uid(), code: 'SCONTO' + (data.coupons.length + 1), type: 'percent', value: 10, valid_from: '', valid_to: '', max_uses: 0, used_count: 0, active: true });
+    saveData(data);
+    renderCoupons();
+  });
+
+  // ---------- fedeltà ----------
+  document.getElementById('loyaltyPoints').value = p.loyalty_points_per_booking ?? 10;
+  document.getElementById('saveLoyaltyBtn').addEventListener('click', () => {
+    p.loyalty_points_per_booking = parseInt(document.getElementById('loyaltyPoints').value, 10) || 0;
+    saveData(data);
+    showToast('Programma fedeltà salvato', 'success');
   });
 
   // ---------- dati ----------

@@ -67,5 +67,16 @@
 
   document.getElementById('searchInput').addEventListener('input', (e) => render(e.target.value));
 
+  document.getElementById('exportCsvBtn').addEventListener('click', () => {
+    exportCSV('clienti.csv', customers, [
+      { label: 'Nome', value: 'name' },
+      { label: 'Email', value: 'email' },
+      { label: 'Telefono', value: 'phone' },
+      { label: 'Prenotazioni', value: c => c.bookings.length },
+      { label: 'Confermate', value: c => c.bookings.filter(b => b.status === 'confirmed').length },
+      { label: 'Ultima prenotazione', value: c => c.bookings.slice().sort((a, b) => b.date.localeCompare(a.date))[0].date },
+    ]);
+  });
+
   render('');
 })();

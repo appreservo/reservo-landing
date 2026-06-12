@@ -64,13 +64,50 @@ document.addEventListener('DOMContentLoaded', () => {
       </table>`;
   }
 
+  let growthChart;
+
+  function renderStats(businesses, bookingsCount) {
+    const active = businesses.filter(b => !b.status || b.status === 'active').length;
+    const pendingCount = businesses.filter(b => b.status === 'pending').length;
+    const rejected = businesses.filter(b => b.status === 'rejected').length;
+    document.getElementById('statActive').textContent = active;
+    document.getElementById('statPendingCount').textContent = pendingCount;
+    document.getElementById('statRejected').textContent = rejected;
+    document.getElementById('statBookings').textContent = bookingsCount;
+  }
+
+  function renderGrowthChart(users) {
+    const counts = new Map();
+    users.forEach(u => {
+      const d = u.createdAt && u.createdAt.toDate ? u.createdAt.toDate() : null;
+      if (!d) return;
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      counts.set(key, (counts.get(key) || 0) + 1);
+    });
+    const labels = Array.from(counts.keys()).sort();
+    const MONTHS = ['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
+    const niceLabels = labels.map(k => { const [y, m] = k.split('-'); return `${MONTHS[parseInt(m, 10) - 1]} ${y}`; });
+    const data = labels.map(k => counts.get(k));
+
+    if (growthChart) growthChart.destroy();
+    growthChart = new Chart(document.getElementById('growthChart'), {
+      type: 'bar',
+      data: { labels: niceLabels, datasets: [{ label: 'Nuove attività registrate', data, backgroundColor: '#C9A227' }] },
+      options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }
+    });
+  }
+
   async function refresh() {
-    const [pending, businesses] = await Promise.all([
+    const [pending, businesses, gestori, bookingsCount] = await Promise.all([
       window.reservoAuth.listPendingAccounts(),
       window.reservoAuth.listAllBusinesses(),
+      window.reservoAuth.listGestoreUsers().catch(() => []),
+      window.reservoAuth.countAllBookings().catch(() => 0),
     ]);
     renderPending(pending);
     renderBusinesses(businesses);
+    renderStats(businesses, bookingsCount);
+    renderGrowthChart(gestori);
   }
 
   function start() { refresh().catch(() => {

@@ -25,6 +25,7 @@
     <a href="#prenota">Prenota</a>
     <a href="#cerca">Le mie prenotazioni</a>
     <a href="#eventi">Eventi</a>
+    <a href="#recensioni">Recensioni</a>
     <a href="#qr">QR Code</a>
     <span class="status-badge" id="statusBadge"></span>
   </nav>
@@ -94,6 +95,12 @@
         <input type="email" id="cEmail" required>
         <label>Note (opzionale)</label>
         <textarea id="cNotes" rows="2"></textarea>
+        <label>Codice promozionale (opzionale)</label>
+        <div class="coupon-row">
+          <input type="text" id="cCoupon" placeholder="es. BENVENUTO10">
+          <button type="button" class="btn btn-outline" id="couponBtn">Applica</button>
+        </div>
+        <div id="couponMessage" class="small"></div>
         <div class="btn-row">
           <button type="button" class="btn btn-outline" data-prev="2">Indietro</button>
           <button type="submit" class="btn btn-gold">Conferma prenotazione</button>
@@ -124,6 +131,11 @@
 <section class="section" id="eventi">
   <h2>Eventi in programma<span class="underline"></span></h2>
   <div id="eventsContainer" style="max-width:640px; margin:0 auto"></div>
+</section>
+
+<section class="section" id="recensioni">
+  <h2>Recensioni<span class="underline"></span></h2>
+  <div id="reviewsContainer" style="max-width:640px; margin:0 auto"></div>
 </section>
 
 <section class="section" id="qr">

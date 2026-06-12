@@ -28,6 +28,32 @@
 </header>
 <main class="content">
 
+  <div class="grid grid-4 mb-3">
+    <div class="card stat-card">
+      <div class="stat-label">Attività attive</div>
+      <div class="stat-value" id="statActive">0</div>
+    </div>
+    <div class="card stat-card">
+      <div class="stat-label">In attesa di approvazione</div>
+      <div class="stat-value" id="statPendingCount">0</div>
+    </div>
+    <div class="card stat-card">
+      <div class="stat-label">Rifiutate</div>
+      <div class="stat-value" id="statRejected">0</div>
+    </div>
+    <div class="card stat-card">
+      <div class="stat-label">Prenotazioni totali (sito)</div>
+      <div class="stat-value" id="statBookings">0</div>
+    </div>
+  </div>
+
+  <div class="card mb-3">
+    <div class="card-header">
+      <h2>Crescita registrazioni attività</h2>
+    </div>
+    <canvas id="growthChart" height="90"></canvas>
+  </div>
+
   <div class="card mb-3">
     <div class="card-header">
       <h2>Richieste di registrazione in attesa</h2>
@@ -43,6 +69,7 @@
   </div>
 
 </main>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <script src="assets/js/db.js"></script>
 <script src="assets/js/admin.js"></script>
 <script type="module" src="assets/js/feedback-widget.js"></script>

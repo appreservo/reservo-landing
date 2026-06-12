@@ -173,6 +173,25 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); bo
   transition: opacity .25s ease;
 }
 
+/* recensioni */
+.stars { display: inline-flex; gap: 2px; color: #d1d5db; font-size: 1.2rem; line-height: 1; }
+.stars .star.filled { color: var(--accent); }
+.stars-input .star { cursor: pointer; transition: transform .1s; }
+.stars-input .star:hover { transform: scale(1.2); }
+.review-summary { text-align: center; margin-bottom: 1.5rem; }
+.review-summary .score { font-size: 2.4rem; font-weight: 800; color: var(--primary); }
+.review-card { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 1.2rem; margin-bottom: 1rem; max-width: 640px; margin-left: auto; margin-right: auto; }
+.review-card .review-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: .3rem; }
+.review-card .review-author { font-weight: 800; color: var(--primary); }
+.review-card .review-date { font-size: .78rem; color: var(--text-mid); }
+.review-card .review-comment { font-size: .92rem; color: var(--text-mid); margin-top: .5rem; }
+
+/* coupon nel wizard di prenotazione */
+.coupon-row { display: flex; gap: .5rem; align-items: flex-end; margin: .8rem 0; }
+.coupon-row input { flex: 1; }
+#couponMessage.ok { color: var(--green, #16a34a); }
+#couponMessage.error { color: var(--red, #dc2626); }
+
 @media (max-width: 720px) {
   .site-nav { position: fixed; top: 60px; left: 0; right: 0; background: var(--primary); flex-direction: column; padding: 1rem; gap: 1rem; transform: translateY(-150%); transition: transform .2s; z-index: 50; }
   .site-nav.open { transform: translateY(0); }

@@ -377,6 +377,16 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--gold); bord
   .sidebar-overlay.open { display: block; opacity: 1; }
 }
 
+/* recensioni: stelle */
+.stars { display: inline-flex; gap: 2px; color: #d1d5db; font-size: 1.1rem; line-height: 1; }
+.stars .star.filled { color: var(--gold); }
+.stars-input .star { cursor: pointer; transition: transform .1s; }
+.stars-input .star:hover { transform: scale(1.2); }
+.review-card { border: 1px solid var(--border); border-radius: 12px; padding: 1rem; margin-bottom: .8rem; }
+.review-card .review-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: .3rem; }
+.review-card .review-meta { font-size: .78rem; color: var(--text-mid); }
+.review-card .review-comment { font-size: .9rem; color: var(--text-dark); margin-top: .4rem; }
+
 @media (max-width: 640px) {
   .content { padding: 1rem; }
   .topbar { padding: .7rem 1rem; flex-wrap: wrap; row-gap: .6rem; }

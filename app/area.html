@@ -38,14 +38,43 @@
     <div id="businessList" class="grid grid-2"></div>
   </div>
 
-  <div class="card">
+  <div class="card mb-3">
     <div class="card-header">
       <h2>Le mie prenotazioni</h2>
     </div>
     <div id="myBookings" class="grid"></div>
   </div>
 
+  <div class="card">
+    <div class="card-header">
+      <h2>Punti fedeltà</h2>
+    </div>
+    <div id="loyaltyList" class="grid"></div>
+  </div>
+
 </main>
+
+<!-- Modal recensione -->
+<div class="modal-overlay" id="reviewModal">
+  <div class="modal">
+    <h3>Lascia una recensione</h3>
+    <p class="text-mid small" id="reviewBusinessName"></p>
+    <div class="field">
+      <label>Valutazione</label><br>
+      <span id="reviewStars"></span>
+      <input type="hidden" id="reviewRating" value="0">
+    </div>
+    <div class="field">
+      <label>Commento (opzionale)</label>
+      <textarea id="reviewComment" rows="3"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-outline" data-close>Annulla</button>
+      <button type="button" class="btn btn-primary" id="reviewSubmitBtn">Invia recensione</button>
+    </div>
+  </div>
+</div>
+
 <script src="assets/js/db.js"></script>
 <script src="assets/js/area.js"></script>
 <script type="module" src="assets/js/feedback-widget.js"></script>

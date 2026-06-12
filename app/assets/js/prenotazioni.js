@@ -126,6 +126,10 @@
   const bookingModal = document.getElementById('bookingModal');
   const bookingForm = document.getElementById('bookingForm');
 
+  const tableSelect = document.getElementById('bTable');
+  tableSelect.innerHTML = '<option value="">— Nessuno —</option>' +
+    (data.tables || []).map(t => `<option value="${t.id}">${t.name} (${t.capacity} posti)</option>`).join('');
+
   function openBookingModal(booking, presetDate) {
     document.getElementById('bookingModalTitle').textContent = booking ? 'Modifica prenotazione' : 'Nuova prenotazione';
     document.getElementById('bookingId').value = booking ? booking.id : '';
@@ -137,6 +141,7 @@
     document.getElementById('bTime').value = booking ? booking.time : '20:00';
     document.getElementById('bStatus').value = booking ? booking.status : 'confirmed';
     document.getElementById('bNotes').value = booking ? (booking.notes || '') : '';
+    tableSelect.value = booking ? (booking.table_id || '') : '';
     document.getElementById('deleteBookingBtn').style.display = booking ? 'inline-flex' : 'none';
     bookingModal.classList.add('open');
   }
@@ -153,6 +158,7 @@
       time: document.getElementById('bTime').value,
       status: document.getElementById('bStatus').value,
       notes: document.getElementById('bNotes').value.trim(),
+      table_id: tableSelect.value || null,
     };
     if (id) {
       const b = findBooking(id);
@@ -247,6 +253,24 @@
     renderCalendar();
   });
   document.getElementById('filterStatus').addEventListener('change', renderTable);
+
+  document.getElementById('exportCsvBtn').addEventListener('click', () => {
+    const status = document.getElementById('filterStatus').value;
+    let list = allBookings();
+    if (status) list = list.filter(b => b.status === status);
+    if (filterDate) list = list.filter(b => b.date === filterDate);
+    list = list.slice().sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
+    exportCSV('prenotazioni.csv', list, [
+      { label: 'Data', value: 'date' },
+      { label: 'Ora', value: 'time' },
+      { label: 'Cliente', value: 'customer_name' },
+      { label: 'Email', value: 'email' },
+      { label: 'Telefono', value: 'phone' },
+      { label: 'Persone', value: 'party_size' },
+      { label: 'Stato', value: b => statusLabel(b.status) },
+      { label: 'Note', value: 'notes' },
+    ]);
+  });
 
   renderAll();
 })();
