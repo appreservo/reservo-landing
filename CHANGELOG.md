@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-06-12 (Topbar blu + tabelle più leggibili su mobile)
+- `style.css`: la topbar superiore (logo, nome attività, utente) ha ora lo stesso colore blu navy della sidebar, con testo e icone in bianco/oro per contrasto.
+- `style.css`: su schermi piccoli (≤640px) le tabelle del gestionale/admin usano un font più piccolo e padding ridotto, per essere più leggibili su mobile.
+
 ## 2026-06-12 (Registrazione: cliente come scelta predefinita)
 - `login.html`: rimosso il selettore "Gestisco un'attività / Sono un cliente" in evidenza — la registrazione predefinita è ora per un cliente. In basso, vicino a "Torna al login", un piccolo link "Sei un'attività?" mostra i campi attività e cambia il ruolo selezionato (e torna a "Sei un cliente?" per invertire la scelta).
 
