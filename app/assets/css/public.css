@@ -181,7 +181,7 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); bo
 .review-summary { text-align: center; margin-bottom: 1.5rem; }
 .review-summary .score { font-size: 2.4rem; font-weight: 800; color: var(--primary); }
 .review-card { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 1.2rem; margin-bottom: 1rem; max-width: 640px; margin-left: auto; margin-right: auto; }
-.review-card .review-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: .3rem; }
+.review-card .review-head { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: .4rem; margin-bottom: .3rem; }
 .review-card .review-author { font-weight: 800; color: var(--primary); }
 .review-card .review-date { font-size: .78rem; color: var(--text-mid); }
 .review-card .review-comment { font-size: .92rem; color: var(--text-mid); margin-top: .5rem; }
@@ -198,4 +198,7 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); bo
   .nav-burger { display: block; }
   .field-row { flex-direction: column; gap: 0; }
   .nav-overlay.open { display: block; opacity: 1; }
+  .coupon-row { flex-direction: column; align-items: stretch; }
+  .review-summary .score { font-size: 1.9rem; }
+  .review-card { padding: .9rem; }
 }

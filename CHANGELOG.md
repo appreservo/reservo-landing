@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-06-13 (Sistemazioni CSS mobile per le nuove funzionalità)
+- `style.css`: `.card-header` ora va a capo (`flex-wrap`) per ospitare i nuovi pulsanti (Esporta CSV, Coupon, ecc.) senza overflow orizzontale su schermi piccoli.
+- `style.css`: `.modal` ha ora `overflow-x: auto` per evitare che tabelle larghe (es. lista d'attesa eventi) sfondino la finestra modale su mobile.
+- `style.css`/`public.css`: `.review-card .review-head` (recensioni) va a capo se nome cliente, stelle e badge non entrano nella riga.
+- `style.css`: nelle righe `.flex.justify-between.items-center` (assegnazione tavolo, liste impostazioni/prenotazioni) le select diventano a larghezza piena e la riga va a capo su mobile (≤640px).
+- `public.css`: il campo coupon nel wizard di prenotazione (`.coupon-row`) si dispone in verticale su mobile (≤720px); ridotta la dimensione del punteggio recensioni e il padding delle review-card.
+
 ## 2026-06-13 (Recensioni, lista d'attesa, coupon, tavoli, export CSV, broadcast, dashboard admin, fedeltà)
 - **Recensioni**: nuova collezione Firestore `reviews`. I clienti lasciano una recensione (stelle + commento) dall'area cliente (`area.html`/`area.js`) per le prenotazioni confermate e passate; la gestione recensioni (`recensioni.html`/`recensioni.js`, nuova voce di menu) permette di approvare/rifiutare/eliminare; le recensioni approvate sono mostrate sul sito pubblico (`sito.js`, sezione "Recensioni") con valutazione media. Nuove funzioni in `auth.js`: `createReview`, `getBusinessReviews`, `getApprovedReviews`, `getCustomerReviews`, `updateReviewStatus`, `deleteReview`. Nuovo helper `starsHtml()` in `db.js` e relativi stili in `style.css`/`public.css`.
 - **Lista d'attesa eventi**: ogni evento ha ora un array `waitlist`; quando un evento è pieno il sito pubblico (`sito.js`) propone "Iscriviti in lista d'attesa" invece di "Partecipa". Nella gestione eventi (`eventi.js`) la lista d'attesa è mostrata separatamente con azioni "Promuovi" (sposta l'iscritto tra i partecipanti) e "Rimuovi".
