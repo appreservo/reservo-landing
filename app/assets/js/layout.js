@@ -82,6 +82,7 @@ function renderLayout(pageTitle, data) {
 
   const topbarHtml = `
     <div class="flex items-center gap-3">
+      <button class="btn btn-outline btn-sm logout-btn-mobile" id="logoutBtnMobile">Esci</button>
       <button class="menu-btn" id="menuToggle">${ICONS.menuburger}</button>
       <div class="topbar-brand">
         <img src="assets/img/logo.png" alt="Reservo">
@@ -95,7 +96,7 @@ function renderLayout(pageTitle, data) {
     <div class="topbar-actions">
       <a href="${siteHref}" target="_blank" class="btn btn-outline btn-sm">${ICONS.external} Anteprima sito</a>
       <div class="badge badge-navy">${data && data.profile ? data.profile.business_name : ''}</div>
-      <button class="btn btn-outline btn-sm" id="logoutBtn">Esci</button>
+      <button class="btn btn-outline btn-sm logout-btn-desktop" id="logoutBtn">Esci</button>
     </div>`;
 
   document.getElementById('sidebar').innerHTML = sidebarHtml;
@@ -127,7 +128,7 @@ function renderLayout(pageTitle, data) {
     setSidebarOpen(false);
   });
 
-  document.getElementById('logoutBtn').addEventListener('click', () => window.reservoAuth.logout());
+  document.querySelectorAll('#logoutBtn, #logoutBtnMobile').forEach(btn => btn.addEventListener('click', () => window.reservoAuth.logout()));
 
   fillIcons();
 }
