@@ -257,6 +257,10 @@ async function clearAllData() {
   data.bookings = [];
   data.events = [];
   data.closures = [];
+  data.coupons = [];
+  data.services = [];
+  data.tables = [];
+  data.staff = [];
   _dataCache = data;
   await window.reservoAuth.saveBusinessData(uid, data);
   await window.reservoAuth.savePublicBusinessData(uid, buildPublicData(data));

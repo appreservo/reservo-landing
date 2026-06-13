@@ -250,7 +250,7 @@
     setTimeout(() => location.reload(), 1200);
   });
   document.getElementById('clearAllBtn').addEventListener('click', async () => {
-    if (!confirm('Cancellare TUTTI i dati (menu, prenotazioni, eventi)? Questa azione non può essere annullata.')) return;
+    if (!confirm('Cancellare TUTTI i dati (menu, prenotazioni, eventi, tavoli, staff, servizi, coupon)? Questa azione non può essere annullata.')) return;
     await clearAllData();
     showToast('Dati cancellati');
     setTimeout(() => location.reload(), 1200);
