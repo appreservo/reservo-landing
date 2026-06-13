@@ -1,7 +1,8 @@
 /* Reservo demo - autenticazione reale via Firebase Authentication */
 import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
-import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signInWithCustomToken, createUserWithEmailAndPassword, signOut, sendPasswordResetEmail, setPersistence, inMemoryPersistence } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
 import { getFirestore, doc, setDoc, getDoc, deleteDoc, collection, getDocs, addDoc, query, where, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
+import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-functions.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAQNqwqsDX2bwNKjj1zt-PCfHH0R2KNjHM",
@@ -15,6 +16,7 @@ const firebaseConfig = {
 const firebaseApp = getApps().length ? getApp() : initializeApp(firebaseConfig);
 const auth = getAuth(firebaseApp);
 const db = getFirestore(firebaseApp);
+const functions = getFunctions(firebaseApp);
 
 function login(email, password) {
   return signInWithEmailAndPassword(auth, email, password);
@@ -236,6 +238,17 @@ function rejectAccount(uid) {
   ]);
 }
 
+/* impersonificazione (pannello admin): ottiene un custom token per accedere come un gestore */
+async function getImpersonationToken(uid) {
+  const callable = httpsCallable(functions, 'impersonateUser');
+  const res = await callable({ uid });
+  return res.data.token;
+}
+
+function isImpersonating() {
+  return sessionStorage.getItem('reservo_impersonating') === '1';
+}
+
 /* pagina di destinazione in base a ruolo/stato dell'account */
 function homeForProfile(profile) {
   if (!profile) return 'index.html';
@@ -247,7 +260,20 @@ function homeForProfile(profile) {
 
 const GESTIONALE_PAGES = ['index.html', 'prenotazioni.html', 'clienti.html', 'statistiche.html', 'menu.html', 'eventi.html', 'impostazioni.html', 'recensioni.html', 'tavoli.html', 'comunicazioni.html'];
 
-function requireAuth() {
+async function requireAuth() {
+  const params = new URLSearchParams(location.search);
+  const impersonateToken = params.get('impersonate');
+  if (impersonateToken) {
+    history.replaceState(null, '', location.pathname + location.hash);
+    try {
+      await setPersistence(auth, inMemoryPersistence);
+      await signInWithCustomToken(auth, impersonateToken);
+      sessionStorage.setItem('reservo_impersonating', '1');
+    } catch (err) {
+      console.error('Impersonazione non riuscita', err);
+    }
+  }
+
   return new Promise((resolve) => {
     onAuthStateChanged(auth, async (user) => {
       if (user) {
@@ -298,6 +324,7 @@ window.reservoAuth = {
   homeForProfile, listPendingAccounts, approveAccount, rejectAccount,
   createReview, getBusinessReviews, getApprovedReviews, getCustomerReviews, listAllReviews, updateReviewStatus, deleteReview,
   createBroadcast, getBusinessBroadcasts, listGestoreUsers, countAllBookings,
+  getImpersonationToken, isImpersonating,
   serverTimestamp,
 };
 export {
@@ -309,5 +336,6 @@ export {
   homeForProfile, listPendingAccounts, approveAccount, rejectAccount,
   createReview, getBusinessReviews, getApprovedReviews, getCustomerReviews, listAllReviews, updateReviewStatus, deleteReview,
   createBroadcast, getBusinessBroadcasts, listGestoreUsers, countAllBookings,
+  getImpersonationToken, isImpersonating,
   serverTimestamp,
 };

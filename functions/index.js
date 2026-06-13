@@ -1,7 +1,9 @@
 const { initializeApp } = require('firebase-admin/app');
 const { getFirestore } = require('firebase-admin/firestore');
+const { getAuth } = require('firebase-admin/auth');
 const { onDocumentCreated, onDocumentUpdated } = require('firebase-functions/v2/firestore');
 const { onSchedule } = require('firebase-functions/v2/scheduler');
+const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { defineSecret } = require('firebase-functions/params');
 const logger = require('firebase-functions/logger');
 
@@ -257,3 +259,31 @@ exports.onBroadcastCreated = onDocumentCreated(
     });
   }
 );
+
+/**
+ * Permette a un admin di ottenere un custom token per accedere al gestionale
+ * di un'attività "come" il gestore (impersonificazione), per supporto/debug.
+ */
+exports.impersonateUser = onCall(async (request) => {
+  if (!request.auth) {
+    throw new HttpsError('unauthenticated', 'Devi effettuare il login.');
+  }
+
+  const callerSnap = await db.doc(`users/${request.auth.uid}`).get();
+  if (!callerSnap.exists || callerSnap.data().role !== 'admin') {
+    throw new HttpsError('permission-denied', 'Solo un admin può impersonare un altro utente.');
+  }
+
+  const targetUid = request.data && request.data.uid;
+  if (!targetUid || typeof targetUid !== 'string') {
+    throw new HttpsError('invalid-argument', 'uid non valido.');
+  }
+
+  const targetSnap = await db.doc(`users/${targetUid}`).get();
+  if (!targetSnap.exists || targetSnap.data().role !== 'gestore') {
+    throw new HttpsError('not-found', 'Utente gestore non trovato.');
+  }
+
+  const token = await getAuth().createCustomToken(targetUid);
+  return { token };
+});

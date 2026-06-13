@@ -94,6 +94,19 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  const impersonateBtn = document.getElementById('impersonateBtn');
+  impersonateBtn.addEventListener('click', async () => {
+    impersonateBtn.disabled = true;
+    try {
+      const token = await window.reservoAuth.getImpersonationToken(uid);
+      window.open(`index.html?impersonate=${encodeURIComponent(token)}`, '_blank');
+    } catch (err) {
+      showToast('Impossibile accedere come gestore', 'error');
+    } finally {
+      impersonateBtn.disabled = false;
+    }
+  });
+
   function start() { load().catch(() => { loadingState.textContent = 'Impossibile caricare i dati.'; }); }
 
   if (window.reservoAuth && window.reservoAuth.currentUser) start();

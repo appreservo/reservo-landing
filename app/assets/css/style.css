@@ -281,6 +281,16 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--gold); bord
   opacity: 0; transform: translateY(10px); transition: opacity .25s, transform .25s; pointer-events: none;
 }
 .toast.show { opacity: 1; transform: translateY(0); }
+
+/* ---------- IMPERSONATION BANNER ---------- */
+.impersonation-banner {
+  position: sticky; top: 0; z-index: 150;
+  display: flex; align-items: center; justify-content: center; gap: .8rem;
+  flex-wrap: wrap;
+  background: var(--gold); color: var(--navy);
+  padding: .5rem 1rem; font-size: .85rem; font-weight: 700; text-align: center;
+}
+.impersonation-banner .btn { background: var(--navy); color: var(--white); border-color: var(--navy); }
 .toast.success { background: var(--green); }
 .toast.error { background: var(--red); }
 

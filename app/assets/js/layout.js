@@ -129,6 +129,20 @@ function renderLayout(pageTitle, data) {
 
   document.getElementById('logoutBtn').addEventListener('click', () => window.reservoAuth.logout());
 
+  if (window.reservoAuth.isImpersonating && window.reservoAuth.isImpersonating()) {
+    let banner = document.getElementById('impersonationBanner');
+    if (!banner) {
+      banner = document.createElement('div');
+      banner.id = 'impersonationBanner';
+      banner.className = 'impersonation-banner';
+      banner.innerHTML = `
+        <span>Stai visualizzando il gestionale di <strong>${(data && data.profile && data.profile.business_name) || 'questa attività'}</strong> come admin.</span>
+        <button class="btn btn-sm" id="exitImpersonationBtn">Esci dall'impersonificazione</button>`;
+      document.body.prepend(banner);
+      document.getElementById('exitImpersonationBtn').addEventListener('click', () => window.reservoAuth.logout());
+    }
+  }
+
   fillIcons();
 }
 
