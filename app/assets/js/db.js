@@ -264,6 +264,8 @@ async function clearAllData() {
   _dataCache = data;
   await window.reservoAuth.saveBusinessData(uid, data);
   await window.reservoAuth.savePublicBusinessData(uid, buildPublicData(data));
+  await window.reservoAuth.deleteAllBusinessBookings(uid).catch(() => {});
+  _liveBookingsCache = [];
   return data;
 }
 

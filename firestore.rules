@@ -34,6 +34,8 @@ service cloud.firestore {
         (resource.data.businessUid == request.auth.uid ||
          resource.data.customerUid == request.auth.uid ||
          isAdmin());
+      allow delete: if request.auth != null &&
+        (resource.data.businessUid == request.auth.uid || isAdmin());
     }
 
     match /reviews/{reviewId} {

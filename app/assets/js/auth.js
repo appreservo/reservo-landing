@@ -106,6 +106,12 @@ function deleteBooking(bookingId) {
   return deleteDoc(doc(db, 'bookings', bookingId));
 }
 
+/* elimina tutte le prenotazioni del sito pubblico (collezione 'bookings') per un'attività */
+async function deleteAllBusinessBookings(businessUid) {
+  const snap = await getDocs(query(collection(db, 'bookings'), where('businessUid', '==', businessUid)));
+  await Promise.all(snap.docs.map(d => deleteDoc(d.ref)));
+}
+
 /* utente corrente (o null), senza richiedere login */
 function whoAmI() {
   return new Promise((resolve) => {
@@ -275,7 +281,7 @@ window.reservoAuth = {
   createUserProfile, getUserProfile, upsertBusinessDirectory, getBusinessDirectory, listBusinesses, listAllBusinesses,
   getBusinessData, saveBusinessData, getPublicBusinessData, savePublicBusinessData, getBusinessBySlug,
   createPublicBooking, getCustomerBookings, getBusinessBookingsForDate, getBusinessBookings,
-  updateBookingStatus, updateBooking, deleteBooking, whoAmI,
+  updateBookingStatus, updateBooking, deleteBooking, deleteAllBusinessBookings, whoAmI,
   homeForProfile, listPendingAccounts, approveAccount, rejectAccount,
   createReview, getBusinessReviews, getApprovedReviews, getCustomerReviews, listAllReviews, updateReviewStatus, deleteReview,
   createBroadcast, getBusinessBroadcasts, listGestoreUsers, countAllBookings,
@@ -286,7 +292,7 @@ export {
   createUserProfile, getUserProfile, upsertBusinessDirectory, getBusinessDirectory, listBusinesses, listAllBusinesses,
   getBusinessData, saveBusinessData, getPublicBusinessData, savePublicBusinessData, getBusinessBySlug,
   createPublicBooking, getCustomerBookings, getBusinessBookingsForDate, getBusinessBookings,
-  updateBookingStatus, updateBooking, deleteBooking, whoAmI,
+  updateBookingStatus, updateBooking, deleteBooking, deleteAllBusinessBookings, whoAmI,
   homeForProfile, listPendingAccounts, approveAccount, rejectAccount,
   createReview, getBusinessReviews, getApprovedReviews, getCustomerReviews, listAllReviews, updateReviewStatus, deleteReview,
   createBroadcast, getBusinessBroadcasts, listGestoreUsers, countAllBookings,
