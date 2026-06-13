@@ -78,7 +78,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     businessTable.innerHTML = `
       <table>
-        <thead><tr><th>Attività</th><th>Tipo</th><th>Email</th><th>Stato</th></tr></thead>
+        <thead><tr><th>Attività</th><th>Tipo</th><th>Email</th><th>Stato</th><th></th></tr></thead>
         <tbody>
           ${filtered.map(b => `
             <tr class="row-link" data-uid="${b.id}">
@@ -86,12 +86,29 @@ document.addEventListener('DOMContentLoaded', () => {
               <td>${typeLabel(b.type)}</td>
               <td>${b.email || '—'}</td>
               <td>${statusBadge(b.status)}</td>
+              <td style="white-space:nowrap"><button class="btn btn-danger btn-sm" data-delete="${b.id}">Elimina</button></td>
             </tr>`).join('')}
         </tbody>
       </table>`;
 
-    businessTable.querySelectorAll('tr.row-link').forEach(tr => tr.addEventListener('click', () => {
+    businessTable.querySelectorAll('tr.row-link').forEach(tr => tr.addEventListener('click', (e) => {
+      if (e.target.closest('[data-delete]')) return;
       location.href = `admin-business.html?uid=${tr.dataset.uid}`;
+    }));
+    businessTable.querySelectorAll('[data-delete]').forEach(btn => btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const b = allBusinesses.find(x => x.id === btn.dataset.delete);
+      if (!confirm(`Eliminare definitivamente "${(b && b.business_name) || 'questa attività'}"? Verranno rimossi profilo, dati attività, prenotazioni e recensioni. L'operazione non può essere annullata.`)) return;
+      btn.disabled = true;
+      try {
+        await window.reservoAuth.deleteBusinessAccount(btn.dataset.delete);
+        allBusinesses = allBusinesses.filter(x => x.id !== btn.dataset.delete);
+        showToast('Attività eliminata', 'success');
+        renderBusinesses(allBusinesses);
+      } catch (err) {
+        btn.disabled = false;
+        showToast('Errore durante l\'eliminazione', 'error');
+      }
     }));
   }
 

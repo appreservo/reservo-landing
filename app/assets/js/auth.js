@@ -112,6 +112,19 @@ async function deleteAllBusinessBookings(businessUid) {
   await Promise.all(snap.docs.map(d => deleteDoc(d.ref)));
 }
 
+/* elimina completamente il profilo di un gestore (pannello admin) */
+async function deleteBusinessAccount(uid) {
+  const reviewsSnap = await getDocs(query(collection(db, 'reviews'), where('businessUid', '==', uid)));
+  await Promise.all([
+    deleteAllBusinessBookings(uid),
+    ...reviewsSnap.docs.map(d => deleteDoc(d.ref)),
+    deleteDoc(doc(db, 'businessData', uid)).catch(() => {}),
+    deleteDoc(doc(db, 'businessPublic', uid)).catch(() => {}),
+    deleteDoc(doc(db, 'businesses', uid)).catch(() => {}),
+  ]);
+  await deleteDoc(doc(db, 'users', uid));
+}
+
 /* utente corrente (o null), senza richiedere login */
 function whoAmI() {
   return new Promise((resolve) => {
@@ -281,7 +294,7 @@ window.reservoAuth = {
   createUserProfile, getUserProfile, upsertBusinessDirectory, getBusinessDirectory, listBusinesses, listAllBusinesses,
   getBusinessData, saveBusinessData, getPublicBusinessData, savePublicBusinessData, getBusinessBySlug,
   createPublicBooking, getCustomerBookings, getBusinessBookingsForDate, getBusinessBookings,
-  updateBookingStatus, updateBooking, deleteBooking, deleteAllBusinessBookings, whoAmI,
+  updateBookingStatus, updateBooking, deleteBooking, deleteAllBusinessBookings, deleteBusinessAccount, whoAmI,
   homeForProfile, listPendingAccounts, approveAccount, rejectAccount,
   createReview, getBusinessReviews, getApprovedReviews, getCustomerReviews, listAllReviews, updateReviewStatus, deleteReview,
   createBroadcast, getBusinessBroadcasts, listGestoreUsers, countAllBookings,
@@ -292,7 +305,7 @@ export {
   createUserProfile, getUserProfile, upsertBusinessDirectory, getBusinessDirectory, listBusinesses, listAllBusinesses,
   getBusinessData, saveBusinessData, getPublicBusinessData, savePublicBusinessData, getBusinessBySlug,
   createPublicBooking, getCustomerBookings, getBusinessBookingsForDate, getBusinessBookings,
-  updateBookingStatus, updateBooking, deleteBooking, deleteAllBusinessBookings, whoAmI,
+  updateBookingStatus, updateBooking, deleteBooking, deleteAllBusinessBookings, deleteBusinessAccount, whoAmI,
   homeForProfile, listPendingAccounts, approveAccount, rejectAccount,
   createReview, getBusinessReviews, getApprovedReviews, getCustomerReviews, listAllReviews, updateReviewStatus, deleteReview,
   createBroadcast, getBusinessBroadcasts, listGestoreUsers, countAllBookings,

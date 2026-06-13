@@ -11,7 +11,7 @@ service cloud.firestore {
       allow read: if request.auth != null && (request.auth.uid == uid || isAdmin());
       allow create: if request.auth != null && request.auth.uid == uid;
       allow update: if request.auth != null && (request.auth.uid == uid || isAdmin());
-      allow delete: if false;
+      allow delete: if request.auth != null && isAdmin();
     }
 
     match /businesses/{uid} {
