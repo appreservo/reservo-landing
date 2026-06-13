@@ -78,13 +78,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     businessTable.innerHTML = `
       <table>
-        <thead><tr><th>Attività</th><th>Tipo</th><th>Email</th><th>Stato</th><th></th></tr></thead>
+        <thead><tr><th>Attività</th><th class="hide-mobile">Tipo</th><th class="truncate-cell">Email</th><th>Stato</th><th></th></tr></thead>
         <tbody>
           ${filtered.map(b => `
             <tr class="row-link" data-uid="${b.id}">
               <td>${b.business_name || '—'}</td>
-              <td>${typeLabel(b.type)}</td>
-              <td>${b.email || '—'}</td>
+              <td class="hide-mobile">${typeLabel(b.type)}</td>
+              <td class="truncate-cell">${b.email || '—'}</td>
               <td>${statusBadge(b.status)}</td>
               <td style="white-space:nowrap"><button class="btn btn-danger btn-sm" data-delete="${b.id}">Elimina</button></td>
             </tr>`).join('')}

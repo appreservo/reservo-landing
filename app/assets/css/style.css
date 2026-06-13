@@ -410,6 +410,10 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--gold); bord
   table { font-size: .78rem; }
   th, td { padding: .45rem .4rem; }
   .card table { min-width: 460px; }
+  #businessTable table { min-width: 0; }
+  #businessTable .hide-mobile { display: none; }
+  #businessTable .truncate-cell { max-width: 90px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #businessTable .btn-sm { padding: .25rem .5rem; font-size: .72rem; }
   .calendar-grid { gap: 4px; }
   .calendar-cell { min-height: 60px; padding: .25rem; }
   .cal-pill { font-size: .6rem; }
