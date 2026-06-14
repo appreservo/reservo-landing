@@ -1,6 +1,6 @@
 /* Reservo demo - autenticazione reale via Firebase Authentication */
 import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
-import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, sendPasswordResetEmail, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
 import { getFirestore, doc, setDoc, getDoc, deleteDoc, collection, getDocs, addDoc, query, where, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -23,6 +23,11 @@ function login(email, password) {
 
 function register(email, password) {
   return createUserWithEmailAndPassword(auth, email, password);
+}
+
+function loginWithGoogle() {
+  sessionStorage.removeItem('reservo_viewAs');
+  return signInWithPopup(auth, new GoogleAuthProvider());
 }
 
 function logout() {
@@ -353,7 +358,7 @@ function requireAdmin() {
 }
 
 window.reservoAuth = {
-  auth, db, login, register, logout, requireAuth, requireAdmin, resetPassword,
+  auth, db, login, register, loginWithGoogle, logout, requireAuth, requireAdmin, resetPassword,
   createUserProfile, getUserProfile, upsertBusinessDirectory, getBusinessDirectory, listBusinesses, listAllBusinesses,
   getBusinessData, saveBusinessData, getPublicBusinessData, savePublicBusinessData, getBusinessBySlug,
   createPublicBooking, getCustomerBookings, getBusinessBookingsForDate, getBusinessBookings,
@@ -365,7 +370,7 @@ window.reservoAuth = {
   serverTimestamp,
 };
 export {
-  auth, db, login, register, logout, requireAuth, requireAdmin, resetPassword,
+  auth, db, login, register, loginWithGoogle, logout, requireAuth, requireAdmin, resetPassword,
   createUserProfile, getUserProfile, upsertBusinessDirectory, getBusinessDirectory, listBusinesses, listAllBusinesses,
   getBusinessData, saveBusinessData, getPublicBusinessData, savePublicBusinessData, getBusinessBySlug,
   createPublicBooking, getCustomerBookings, getBusinessBookingsForDate, getBusinessBookings,

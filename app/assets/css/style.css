@@ -357,6 +357,20 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--gold); bord
 }
 .login-forgot a { color: var(--text-mid); text-decoration: none; }
 .login-forgot a:hover { color: var(--navy); text-decoration: underline; }
+.login-divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: .9rem 0;
+  color: var(--text-mid);
+  font-size: .78rem;
+}
+.login-divider::before, .login-divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid var(--border);
+}
+.login-divider span { padding: 0 .6rem; }
 .hidden { display: none !important; }
 .login-hint {
   margin-top: 1.2rem;

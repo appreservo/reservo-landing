@@ -29,6 +29,11 @@
       </div>
       <div id="loginError" class="login-error"></div>
       <button type="submit" class="btn btn-primary w-full" id="loginSubmit">Accedi</button>
+      <div class="login-divider"><span>oppure</span></div>
+      <button type="button" class="btn btn-outline w-full" id="googleLoginBtn">
+        <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/><path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/><path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/><path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/></svg>
+        Accedi con Google
+      </button>
       <p class="login-forgot">
         <a href="#" id="forgotLink">Password dimenticata?</a>
       </p>
@@ -95,17 +100,51 @@
         · <a href="#" id="roleToggleLink">Sei un'attività?</a>
       </p>
     </form>
+
+    <form id="completeProfileForm" class="hidden">
+      <p class="text-mid small mb-3">Completa il tuo profilo per continuare con Reservo.</p>
+
+      <div class="field">
+        <label>Nome e cognome</label>
+        <input type="text" id="cpName" autocomplete="name" required>
+      </div>
+
+      <div id="cpBusinessFields" class="hidden">
+        <div class="field">
+          <label>Nome attività</label>
+          <input type="text" id="cpBusinessName" autocomplete="organization">
+        </div>
+        <div class="field">
+          <label>Tipo attività</label>
+          <select id="cpBusinessType">
+            <option value="restaurant">Ristorante / Bar</option>
+            <option value="artisan">Artigiano / Estetista</option>
+            <option value="professional">Professionista / Studio</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="completeProfileError" class="login-error"></div>
+      <button type="submit" class="btn btn-primary w-full" id="completeProfileSubmit">Continua</button>
+      <p class="login-forgot">
+        <a href="#" id="cpRoleToggleLink">Sei un'attività?</a>
+      </p>
+    </form>
   </div>
 
 <script src="assets/js/db.js"></script>
 <script type="module">
-  import { auth, login, register, resetPassword, createUserProfile, getUserProfile, upsertBusinessDirectory, homeForProfile, serverTimestamp } from './assets/js/auth.js';
+  import { auth, login, loginWithGoogle, register, resetPassword, createUserProfile, getUserProfile, upsertBusinessDirectory, homeForProfile, serverTimestamp } from './assets/js/auth.js';
   import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
 
   onAuthStateChanged(auth, async (user) => {
     if (user) {
       const profile = await getUserProfile(user.uid).catch(() => null);
-      location.href = homeForProfile(profile);
+      if (profile) {
+        location.href = homeForProfile(profile);
+      } else {
+        showCompleteProfile(user);
+      }
     }
   });
 
@@ -136,12 +175,39 @@
     try {
       const cred = await login(email, password);
       const profile = await getUserProfile(cred.user.uid).catch(() => null);
-      location.href = homeForProfile(profile);
+      if (profile) {
+        location.href = homeForProfile(profile);
+      } else {
+        showCompleteProfile(cred.user);
+      }
     } catch (err) {
       errorEl.textContent = errorMessages[err.code] || 'Accesso non riuscito. Riprova.';
       errorEl.classList.add('show');
       submitBtn.disabled = false;
       submitBtn.textContent = 'Accedi';
+    }
+  });
+
+  // --- Accesso con Google ---
+  const googleBtn = document.getElementById('googleLoginBtn');
+  googleBtn.addEventListener('click', async () => {
+    errorEl.classList.remove('show');
+    googleBtn.disabled = true;
+    try {
+      const cred = await loginWithGoogle();
+      const profile = await getUserProfile(cred.user.uid).catch(() => null);
+      if (profile) {
+        location.href = homeForProfile(profile);
+      } else {
+        showCompleteProfile(cred.user);
+      }
+    } catch (err) {
+      if (err.code !== 'auth/popup-closed-by-user' && err.code !== 'auth/cancelled-popup-request') {
+        errorEl.textContent = 'Accesso con Google non riuscito. Riprova.';
+        errorEl.classList.add('show');
+      }
+    } finally {
+      googleBtn.disabled = false;
     }
   });
 
@@ -264,6 +330,87 @@
       registerError.classList.add('show');
       registerSubmit.disabled = false;
       registerSubmit.textContent = 'Crea account';
+    }
+  });
+
+  // --- Completamento profilo (primo accesso con Google) ---
+  const completeProfileForm = document.getElementById('completeProfileForm');
+  const completeProfileError = document.getElementById('completeProfileError');
+  const completeProfileSubmit = document.getElementById('completeProfileSubmit');
+  const cpRoleToggleLink = document.getElementById('cpRoleToggleLink');
+  const cpBusinessFields = document.getElementById('cpBusinessFields');
+  const cpName = document.getElementById('cpName');
+  let cpSelectedRole = 'cliente';
+
+  function setCpRole(role) {
+    cpSelectedRole = role;
+    cpBusinessFields.classList.toggle('hidden', role !== 'gestore');
+    cpRoleToggleLink.textContent = role === 'gestore' ? 'Sei un cliente?' : "Sei un'attività?";
+  }
+  cpRoleToggleLink.addEventListener('click', (e) => {
+    e.preventDefault();
+    setCpRole(cpSelectedRole === 'gestore' ? 'cliente' : 'gestore');
+  });
+
+  function showCompleteProfile(user) {
+    [form, resetForm, registerForm].forEach(f => f.classList.add('hidden'));
+    completeProfileForm.classList.remove('hidden');
+    setCpRole('cliente');
+    cpName.value = user.displayName || '';
+  }
+
+  completeProfileForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const user = auth.currentUser;
+    const name = cpName.value.trim();
+    const businessName = document.getElementById('cpBusinessName').value.trim();
+    const businessType = document.getElementById('cpBusinessType').value;
+
+    completeProfileError.classList.remove('show');
+
+    if (cpSelectedRole === 'gestore' && !businessName) {
+      completeProfileError.textContent = 'Inserisci il nome della tua attività.';
+      completeProfileError.classList.add('show');
+      return;
+    }
+
+    completeProfileSubmit.disabled = true;
+    completeProfileSubmit.textContent = 'Creazione profilo…';
+
+    try {
+      const uid = user.uid;
+      const email = user.email || '';
+      const userProfile = { role: cpSelectedRole, name, email, createdAt: serverTimestamp() };
+      if (cpSelectedRole === 'gestore') {
+        userProfile.businessName = businessName;
+        userProfile.businessType = businessType;
+        userProfile.status = 'pending';
+      }
+      await createUserProfile(uid, userProfile);
+
+      if (cpSelectedRole === 'gestore') {
+        const slug = slugify(businessName);
+        await upsertBusinessDirectory(uid, {
+          business_name: businessName, type: businessType, slug,
+          description: '', address: '', phone: '', email,
+          status: 'pending',
+        });
+        const seed = defaultData();
+        seed.profile.business_name = businessName;
+        seed.profile.type = businessType;
+        seed.profile.slug = slug;
+        seed.profile.email = email;
+        await window.reservoAuth.saveBusinessData(uid, seed);
+        await window.reservoAuth.savePublicBusinessData(uid, buildPublicData(seed));
+        location.href = 'pending.html';
+      } else {
+        location.href = 'area.html';
+      }
+    } catch (err) {
+      completeProfileError.textContent = 'Si è verificato un errore. Riprova.';
+      completeProfileError.classList.add('show');
+      completeProfileSubmit.disabled = false;
+      completeProfileSubmit.textContent = 'Continua';
     }
   });
 
