@@ -222,7 +222,7 @@ function waitForAuthReady() {
 async function loadData() {
   if (_dataCache) return _dataCache;
   await waitForAuthReady();
-  const uid = window.reservoAuth.auth.currentUser.uid;
+  const uid = window.reservoAuth.getBusinessUid();
   const remote = await window.reservoAuth.getBusinessData(uid);
   if (remote) {
     _dataCache = remote;
@@ -235,7 +235,7 @@ async function loadData() {
 
 function saveData(data) {
   _dataCache = data;
-  const uid = window.reservoAuth && window.reservoAuth.auth.currentUser && window.reservoAuth.auth.currentUser.uid;
+  const uid = window.reservoAuth && window.reservoAuth.getBusinessUid();
   if (uid) {
     window.reservoAuth.saveBusinessData(uid, data).catch(() => {});
     window.reservoAuth.savePublicBusinessData(uid, buildPublicData(data)).catch(() => {});
@@ -243,7 +243,7 @@ function saveData(data) {
 }
 
 async function resetDemoData() {
-  const uid = window.reservoAuth.auth.currentUser.uid;
+  const uid = window.reservoAuth.getBusinessUid();
   _dataCache = demoData();
   await window.reservoAuth.saveBusinessData(uid, _dataCache);
   await window.reservoAuth.savePublicBusinessData(uid, buildPublicData(_dataCache));
@@ -251,7 +251,7 @@ async function resetDemoData() {
 }
 
 async function clearAllData() {
-  const uid = window.reservoAuth.auth.currentUser.uid;
+  const uid = window.reservoAuth.getBusinessUid();
   const data = _dataCache || emptyData(window.reservoAuth.currentProfile);
   data.menu = [];
   data.bookings = [];
@@ -275,7 +275,7 @@ let _liveBookingsCache = null;
 async function loadAllBookings() {
   const data = await loadData();
   if (_liveBookingsCache === null) {
-    const uid = window.reservoAuth.auth.currentUser.uid;
+    const uid = window.reservoAuth.getBusinessUid();
     _liveBookingsCache = await window.reservoAuth.getBusinessBookings(uid).catch(() => []);
   }
   return data.bookings.concat(_liveBookingsCache);

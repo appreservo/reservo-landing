@@ -2,7 +2,7 @@
   const data = await loadData();
   renderLayout('Recensioni', data);
 
-  const businessUid = window.reservoAuth.auth.currentUser.uid;
+  const businessUid = window.reservoAuth.getBusinessUid();
   let reviews = [];
 
   function render() {

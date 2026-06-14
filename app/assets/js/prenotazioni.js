@@ -2,7 +2,7 @@
   let data = await loadData();
   renderLayout('Prenotazioni', data);
 
-  const businessUid = window.reservoAuth.auth.currentUser.uid;
+  const businessUid = window.reservoAuth.getBusinessUid();
   let liveBookings = await window.reservoAuth.getBusinessBookings(businessUid).catch(() => []);
 
   function allBookings() {

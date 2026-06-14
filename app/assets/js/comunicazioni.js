@@ -2,7 +2,7 @@
   const data = await loadData();
   renderLayout('Comunicazioni', data);
 
-  const businessUid = window.reservoAuth.auth.currentUser.uid;
+  const businessUid = window.reservoAuth.getBusinessUid();
   const businessName = data.profile?.business_name || '';
 
   function statusLabelBroadcast(status) {

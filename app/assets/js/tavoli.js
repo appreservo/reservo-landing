@@ -2,7 +2,7 @@
   const data = await loadData();
   renderLayout('Tavoli', data);
 
-  const businessUid = window.reservoAuth.auth.currentUser.uid;
+  const businessUid = window.reservoAuth.getBusinessUid();
   let liveBookings = await window.reservoAuth.getBusinessBookings(businessUid).catch(() => []);
 
   function allBookings() {

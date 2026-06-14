@@ -41,7 +41,7 @@
     saveData(data);
 
     if (window.reservoAuth && window.reservoAuth.auth.currentUser) {
-      window.reservoAuth.upsertBusinessDirectory(window.reservoAuth.auth.currentUser.uid, {
+      window.reservoAuth.upsertBusinessDirectory(window.reservoAuth.getBusinessUid(), {
         business_name: p.business_name,
         type: p.type,
         slug: p.slug || slugify(p.business_name),

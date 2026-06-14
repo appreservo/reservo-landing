@@ -1,8 +1,7 @@
 /* Reservo demo - autenticazione reale via Firebase Authentication */
 import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
-import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signInWithCustomToken, createUserWithEmailAndPassword, signOut, sendPasswordResetEmail, setPersistence, inMemoryPersistence } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
 import { getFirestore, doc, setDoc, getDoc, deleteDoc, collection, getDocs, addDoc, query, where, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
-import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-functions.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAQNqwqsDX2bwNKjj1zt-PCfHH0R2KNjHM",
@@ -16,7 +15,6 @@ const firebaseConfig = {
 const firebaseApp = getApps().length ? getApp() : initializeApp(firebaseConfig);
 const auth = getAuth(firebaseApp);
 const db = getFirestore(firebaseApp);
-const functions = getFunctions(firebaseApp);
 
 function login(email, password) {
   return signInWithEmailAndPassword(auth, email, password);
@@ -43,7 +41,17 @@ async function getUserProfile(uid) {
   return snap.exists() ? snap.data() : null;
 }
 
+/* impedisce le scritture quando un admin sta visualizzando un'attività in sola lettura ("Visualizza come") */
+function blockedInViewAs() {
+  if (window.reservoAuth && window.reservoAuth.viewAsUid) {
+    if (window.showToast) window.showToast('Modalità sola lettura: modifica non salvata', 'error');
+    return true;
+  }
+  return false;
+}
+
 function upsertBusinessDirectory(uid, business) {
+  if (blockedInViewAs()) return Promise.resolve();
   return setDoc(doc(db, 'businesses', uid), { ...business, updatedAt: serverTimestamp() }, { merge: true });
 }
 
@@ -58,6 +66,7 @@ async function getBusinessData(uid) {
 }
 
 function saveBusinessData(uid, data) {
+  if (blockedInViewAs()) return Promise.resolve();
   return setDoc(doc(db, 'businessData', uid), data);
 }
 
@@ -67,6 +76,7 @@ async function getPublicBusinessData(uid) {
 }
 
 function savePublicBusinessData(uid, data) {
+  if (blockedInViewAs()) return Promise.resolve();
   return setDoc(doc(db, 'businessPublic', uid), data);
 }
 
@@ -92,6 +102,7 @@ async function getBusinessBookingsForDate(businessUid, date) {
 }
 
 function updateBookingStatus(bookingId, status) {
+  if (blockedInViewAs()) return Promise.resolve();
   return setDoc(doc(db, 'bookings', bookingId), { status }, { merge: true });
 }
 
@@ -101,15 +112,18 @@ async function getBusinessBookings(businessUid) {
 }
 
 function updateBooking(bookingId, payload) {
+  if (blockedInViewAs()) return Promise.resolve();
   return setDoc(doc(db, 'bookings', bookingId), payload, { merge: true });
 }
 
 function deleteBooking(bookingId) {
+  if (blockedInViewAs()) return Promise.resolve();
   return deleteDoc(doc(db, 'bookings', bookingId));
 }
 
 /* elimina tutte le prenotazioni del sito pubblico (collezione 'bookings') per un'attività */
 async function deleteAllBusinessBookings(businessUid) {
+  if (blockedInViewAs()) return;
   const snap = await getDocs(query(collection(db, 'bookings'), where('businessUid', '==', businessUid)));
   await Promise.all(snap.docs.map(d => deleteDoc(d.ref)));
 }
@@ -166,15 +180,18 @@ async function getCustomerReviews(customerUid) {
 }
 
 function updateReviewStatus(reviewId, status) {
+  if (blockedInViewAs()) return Promise.resolve();
   return setDoc(doc(db, 'reviews', reviewId), { status }, { merge: true });
 }
 
 function deleteReview(reviewId) {
+  if (blockedInViewAs()) return Promise.resolve();
   return deleteDoc(doc(db, 'reviews', reviewId));
 }
 
 /* comunicazioni broadcast (collezione top-level 'broadcasts', elaborate da una Cloud Function) */
 function createBroadcast(broadcast) {
+  if (blockedInViewAs()) return Promise.resolve();
   return addDoc(collection(db, 'broadcasts'), { ...broadcast, created_at: serverTimestamp(), status: 'pending' });
 }
 
@@ -238,15 +255,13 @@ function rejectAccount(uid) {
   ]);
 }
 
-/* impersonificazione (pannello admin): ottiene un custom token per accedere come un gestore */
-async function getImpersonationToken(uid) {
-  const callable = httpsCallable(functions, 'impersonateUser');
-  const res = await callable({ uid });
-  return res.data.token;
+/* "Visualizza come" (pannello admin): l'uid dell'attività che l'admin sta visualizzando in sola lettura */
+function getBusinessUid() {
+  return window.reservoAuth.viewAsUid || (auth.currentUser && auth.currentUser.uid);
 }
 
-function isImpersonating() {
-  return sessionStorage.getItem('reservo_impersonating') === '1';
+function isViewingAs() {
+  return !!window.reservoAuth.viewAsUid;
 }
 
 /* pagina di destinazione in base a ruolo/stato dell'account */
@@ -260,25 +275,37 @@ function homeForProfile(profile) {
 
 const GESTIONALE_PAGES = ['index.html', 'prenotazioni.html', 'clienti.html', 'statistiche.html', 'menu.html', 'eventi.html', 'impostazioni.html', 'recensioni.html', 'tavoli.html', 'comunicazioni.html'];
 
-async function requireAuth() {
-  const params = new URLSearchParams(location.search);
-  const impersonateToken = params.get('impersonate');
-  if (impersonateToken) {
-    history.replaceState(null, '', location.pathname + location.hash);
-    try {
-      await setPersistence(auth, inMemoryPersistence);
-      await signInWithCustomToken(auth, impersonateToken);
-      sessionStorage.setItem('reservo_impersonating', '1');
-    } catch (err) {
-      console.error('Impersonazione non riuscita', err);
-    }
-  }
-
+function requireAuth() {
   return new Promise((resolve) => {
     onAuthStateChanged(auth, async (user) => {
       if (user) {
         const profile = await getUserProfile(user.uid).catch(() => null);
         const current = location.pathname.split('/').pop() || 'index.html';
+
+        /* "Visualizza come" (sola lettura): un admin apre una pagina del gestionale con ?viewAs=<uid> */
+        let viewAsUid = null;
+        if (profile && profile.role === 'admin') {
+          const params = new URLSearchParams(location.search);
+          viewAsUid = params.get('viewAs') || sessionStorage.getItem('reservo_viewAs');
+          if (viewAsUid) {
+            sessionStorage.setItem('reservo_viewAs', viewAsUid);
+            history.replaceState(null, '', location.pathname + location.hash);
+          }
+        }
+
+        if (viewAsUid && GESTIONALE_PAGES.includes(current)) {
+          const viewedProfile = await getUserProfile(viewAsUid).catch(() => null);
+          document.documentElement.classList.remove('auth-pending');
+          const displayName = (viewedProfile && viewedProfile.name) || (profile && profile.name) || user.email;
+          document.querySelectorAll('.js-user-name').forEach(el => { el.textContent = displayName; });
+          window.reservoAuth.currentUser = user;
+          window.reservoAuth.currentProfile = viewedProfile || profile;
+          window.reservoAuth.viewAsUid = viewAsUid;
+          window.dispatchEvent(new Event('reservo-auth-ready'));
+          resolve(user);
+          return;
+        }
+
         const home = homeForProfile(profile);
         const allowed = (GESTIONALE_PAGES.includes(current) && home === 'index.html') || current === home;
         if (!allowed) { location.href = home; return; }
@@ -324,7 +351,7 @@ window.reservoAuth = {
   homeForProfile, listPendingAccounts, approveAccount, rejectAccount,
   createReview, getBusinessReviews, getApprovedReviews, getCustomerReviews, listAllReviews, updateReviewStatus, deleteReview,
   createBroadcast, getBusinessBroadcasts, listGestoreUsers, countAllBookings,
-  getImpersonationToken, isImpersonating,
+  getBusinessUid, isViewingAs,
   serverTimestamp,
 };
 export {
@@ -336,6 +363,6 @@ export {
   homeForProfile, listPendingAccounts, approveAccount, rejectAccount,
   createReview, getBusinessReviews, getApprovedReviews, getCustomerReviews, listAllReviews, updateReviewStatus, deleteReview,
   createBroadcast, getBusinessBroadcasts, listGestoreUsers, countAllBookings,
-  getImpersonationToken, isImpersonating,
+  getBusinessUid, isViewingAs,
   serverTimestamp,
 };
